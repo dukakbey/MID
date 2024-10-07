@@ -1,0 +1,75 @@
+DPU
+===========
+DPU kaynak kod gitlab : http://192.168.21.86/
+Diğer kaynak kodlar: http://192.168.21.102
+
+throubleShouting:
+    - xx.lib does not exist derse manuel olarak linker -> input ayarına ilgili lib dosyasını eklersin.
+
+dll'ler:
+	- cublass*.dll , cudnn*.dll ,cufftw*.dll,curand*.dll,cusolver*.dll dosyaları algoritma ile ilgili. Ekran kartı üzerinde machine learning işlerinin yapılmasını sağlıyor.Model input verip model output üretilmesini sağlayan kütüphanelerin dll'leri.
+	- nvinfer*.dll, nvm.dll, nvonnxparser*.dll, nvparsers*.dll,nvrtc*.dll, onnx*.dll  dll dosyaları onnx uygulamasının çalışması için gereklidir.	
+	- onnxruntime_providers_tensorrt.dll : hızlandırıcıdır. Modelin ekran kartında daha hızlı çalışabilmesi için gerekli. 
+	- DPU çalışabilmesi için CUDA kurulu olmalıdır.
+	- poco dll'leri 
+
+ONNX:
+	- makine öğrenimi ve derin öğrenme modellerinin farklı frameworkler arasında taşınmasını kolaylaştıran açık kaynaklı bir formattır. 
+	- ONNX, özellikle farklı platformlar ve frameworkler arasında birlikte çalışabilirliği artırmayı amaçlar. 
+	- Makine öğrenimi modelleri genellikle belirli frameworklerde (örneğin, TensorFlow, PyTorch, MXNet, Scikit-learn) eğitilir. Ancak bu frameworkler arasında doğrudan bir geçiş yapmak zor olabilir. ONNX'in amacı, bu modellerin farklı frameworkler arasında kolayca taşınabilmesi ve her bir platformun avantajlarından yararlanabilmesi için ortak bir format sağlamaktır. 
+	- ONNX, bir modelin eğitimden üretime geçirilmesini hızlandırır ve model taşınabilirliğini artırır.
+	- datapostgresql.dll postgre ile konuşmamızı sağlıyor.
+	- pocoJSON*.dll config dosyalarının json formatında kaydedilmesini sağlıyor. 
+	- pocoNet64.dll web socket özelliklerini sağlıyor.
+	- tensorflow.dll onnx altyapısı yokken kullanılıyordu, şuan kullanılmıyor.
+	- vcruntime140_1.dll : visual stdio'nun ihtiyaç duyduğu bir dosya.
+POCO:
+	- POCO (POrtable COmponents), modern ağ ve internet tabanlı uygulamaları geliştirmek için kullanılan açık kaynaklı bir C++ sınıf kütüphanesidir. 
+	- Genellikle C++ için Boost kütüphanesine benzeyen özellikler sunar, ancak daha fazla ağ, internet, veri tabanı, XML, JSON gibi uygulama geliştirme bileşenlerini de içerir.
+	- Server tabanlı yazılımlar geliştirilmesini sağlıyor. DPU'da aktif kullanılıyor. 
+	- PostgreSQL ile konuşuyor. Alarm analizi yapıyor ve activity count'ları veritabanına kaydediyor.
+	- dll'lerin oluşturulması gerekiyor bu nedenle kütüphane derlenmesi gerekiyor ve dokümanlarında anlatılıyor.
+	
+.pdb (Program Database) Dosyası:
+	- Program Database anlamına gelir ve derleme sırasında derleyici tarafından oluşturulan bir dosyadır. Bu dosya, uygulamanızın sembol bilgilerini (fonksiyon isimleri, değişkenler, veri yapıları gibi), kaynak kod satırı numaralarını ve hata ayıklama (debugging) bilgilerini içerir.
+	
+.bsc (Source Browser) Dosyası:
+	- BSC dosyası, Source Browser dosyası anlamına gelir. Bu dosya, derlenen C++ projesindeki sembollerin ve kaynak kodun taranması ve incelenmesi için kullanılan bir dosyadır. 
+	- BSC dosyaları, projedeki sembollerin referanslarının hızlı bir şekilde aranmasına yardımcı olur ve Visual Studio gibi IDE'lerde "Go To Definition" ya da "Find All References" gibi özellikleri kullanırken arka planda çalışır.		
+	
+dpu_main.cpp:
+	- _setmaxstdio(2048) : 2 gb anlık olarak dosya açabiliyoruz. DPU özelinde 2gb üstüne çıkmaya çalıştığında işletim sistemi sınır getiriyor, açamıyoruz. Mesela Alarm triger kayıtlarında aynı anda 500 alar oldu. Waterfall ses kayıtlarında raw data oluşturuluyor. Aynı anda yapılmaya çalışıldığında işletim sistemi sınır koyuyor. Alarmlar oluşmayabilir default 1 GB'di bu ayar ile 2gb'ye çıkarıldı.
+	- DPU_VERSION : commit'e göre elle git üzerinden güncellenmesi gerekiyor.
+    - DPU yazılımı 2 adet sinyal kullanıyor:
+        - TerminationSignalHandler: ctrl + c handle edilir.
+    - yazılımın çalışması için 3 temel şeye ihtiyaç var: 
+        - ilk önce config dosyalarını okuyor. Bunu yapan dpu_config_factory :
+            default_config_folder_ = ".\\run_time_files\\config\\default"; :yazılımı ayağa kaldırmak için minimum ihtiyaç duyduğu parametreler.
+            application_config_folder_="C:\\MIDAS\\config\\application";: sahaya göre değişen parametreler.
+            user_config_folder_="C:\\MIDAS\\config\\user"; : kullanıcının sahada değiştirmiş olduğu ayarlar. örneğin: sensörlerin ip'leri, seri portları farklı olabilir. saha aynı olsa da bu ayarlar bu katmanda değiştirilir.
+            web_server_root_folder_ = ".\\run_time_files\\html"; : 9980,9981 (son kullanıcı için  detay içermeyen 2. arayüz) sorgulayıcı cihazların ve DPU yazılımının ayarlarını yapabildiğimiz, algoritma parametrelerini,raw dataların takibini yapabildiğimiz değiştirebildiğimiz bir DPU arayüz var. Bu arayüz'ün HTML dosyalrının bulunduğu path.
+        - 
+    dpu_config_factory: 
+        - gelen json mesajlarını ayrıştırıyor:
+            - on_demand geldiğinde ona göre işlem yapıyor.
+            - update 'e tıklandığında bu işlemin update mi save mi olduğunu belirler.
+
+BOOST:
+	- boost::asio:io_service socket oluşturma ve multithreading işlemler için kullanılır.
+	- 
+
+Derleme:
+	- release_Od olarak derleniyor.
+	
+Kütüphaneleri Ekleme:
+	- visual studio Additional Include Directories  
+
+Visual Studio Properties settings:
+    Build Event: 
+        - Visual studio properties altında yer alan Build event kısmında Command Line adında bir ayarımız var. Burada her build işlemi gerçekleştiğinde çalışacak komut giriyoruz. Bu komut bize "version.h" oluşturuyor.
+        -
+    Code Generation:
+        - Enable Enhanced Instruction Set: Advanced Vector Extensions (X86/X64) (/arch:AVX) olmalı. Bu seçenek seçilmezse uygulama yavaş çalışabilir. 
+        - Bu mimaride CPU'da bazı işlemler oluyor ve CPU üzerinde işlemleri hızlandırıyor.
+        - Bu sekmede Runtime Library ayarı multithread dll (md) olmalıdır.  
+
