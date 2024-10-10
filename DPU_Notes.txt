@@ -6,6 +6,8 @@ Diğer kaynak kodlar: http://192.168.21.102
 throubleShouting:
     - xx.lib does not exist derse manuel olarak linker -> input ayarına ilgili lib dosyasını eklersin.
 
+Sorular .
+	- Underground ve Fence modu ? 
 dll'ler:
 	- cublass*.dll , cudnn*.dll ,cufftw*.dll,curand*.dll,cusolver*.dll dosyaları algoritma ile ilgili. Ekran kartı üzerinde machine learning işlerinin yapılmasını sağlıyor.Model input verip model output üretilmesini sağlayan kütüphanelerin dll'leri.
 	- nvinfer*.dll, nvm.dll, nvonnxparser*.dll, nvparsers*.dll,nvrtc*.dll, onnx*.dll  dll dosyaları onnx uygulamasının çalışması için gereklidir.	
@@ -53,7 +55,11 @@ dpu_main.cpp:
         - gelen json mesajlarını ayrıştırıyor:
             - on_demand geldiğinde ona göre işlem yapıyor.
             - update 'e tıklandığında bu işlemin update mi save mi olduğunu belirler.
-
+	dpu_config :
+		- config dosyalarındaki
+		- dpu_config_factory'de constructor parametlerei olan 3 config dosyasının içeriğindeki parametreler dpu_config.h 'de tutulan değişkenlere map'leniyor. 
+dpu_config.h:
+		- ProcessedDataRecorderParameters: waterfall burada tutuluyor.
 BOOST:
 	- boost::asio:io_service socket oluşturma ve multithreading işlemler için kullanılır.
 	- 
