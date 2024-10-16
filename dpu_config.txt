@@ -1,0 +1,714 @@
+#ifndef DPUCONFIG_H
+#define DPUCONFIG_H
+
+#include <unordered_map>
+#include <boost/thread.hpp>
+#include <vector>
+#include <tuple>
+#include "msm_messages/msm_messages.h"
+#include "message_queue/alarm_analyzer_message_queue/alarm_analyzer_message_queue.h"
+#include "message_queue/iu_communicator_message_queue/iu_communicator_message_queue.h"
+#include <boost/filesystem.hpp>
+#include <boost/thread/mutex.hpp>
+#define MAX_FILENAME_LENGTH 400
+#define MAX_NUMBER_OF_CHANNELS_IN_ONE_SAMPLE 10000
+#define MAX_INTERNAL_MESSAGE_SIZE 500000
+#define  INTERROGATOR_ERROR_INFO_MESSAGE_SIZE 100
+
+/*sorular:
+	- report activity flag nedir ? 
+*/
+
+enum CommunicationPath {
+	SERIALPORT=0,
+	ETHERNET=1
+};
+
+typedef enum
+{
+	SINGLE = 0,
+	REDUNDANT = 1,
+	SEPERATE =2
+}InterrogatorUsageType;
+
+static const char* EnumInterrogatorUsage[] = {"single","redundant","seperate"};
+
+typedef enum
+{
+    FIBER1 = 0,
+	FIBER2 = 1
+}InterrogatorFiberType;
+
+
+typedef enum {
+	MIDASV15=0,
+	MIDASV2=1,
+	MIDASV3A=2,
+	MIDASV3=3,
+	MIDASV4=4
+}InterrogatorDeviceType;
+static const char*  EnumInterrogatorDeviceType[] = {"midasv15","midasv2","midasv3a","midasv3","midasv4"};
+
+
+typedef struct {
+	int sensor_data_length;
+	int average_length_in_samples;
+	int oamp1_current;
+	int oamp2_current;
+	std::string fan_speed;
+	std::string interrogator_version;
+	std::string mode_name;
+	int check_laser_status;
+}InterrogatorConfigurations;
+
+typedef struct InterrogatorCommand {
+    
+	int  cmd_status;
+	int  enable_saving_reply_message;
+	std::string interrogator_reply_message_for_this_command;
+	InterrogatorCommand() {
+		cmd_status = -1;
+		/*
+		-1 degeri komutun onceden hic gonderilmedigini gosterir.
+		1 degeri komutun sorgulayici cihaz tarafindan alindigini gosterir.
+		0 degeri ise komutun sorgulayici cihaza gonderildigi henuz cevabin alinmadigini gosterir.
+		*/
+	}
+}InterrogatorCommand;
+
+typedef struct
+{
+  int channel_number_start;
+  int channel_number_end;
+  float threshold;
+} ChannelSpecificDetectionThresholds;
+
+typedef struct
+{
+  int channel_number_start;
+  int channel_number_end;
+  float coeff;
+} ChannelSpecificMinimumPowerStdCoeff;
+
+
+typedef struct {
+	int channel_number_start;
+	int channel_number_end;
+	int filter;
+	int active_flag;
+
+}ChannelSpecificFilter;
+
+
+
+typedef struct
+{
+  int channel_number_start;
+  int channel_number_end;
+  int preset;
+
+} ChannelSpecificClassificationPresets;
+
+typedef struct
+{
+  int channel_number_start;
+  int channel_number_end;
+} OndemandRecordingChannelZone;
+
+typedef struct
+{
+  int channel_number_start;
+  int channel_number_end;
+} SpecialChannelZone;
+
+typedef struct
+{
+  int enable_rolling_waterfall_recorder;
+  char  rolling_waterfall_recorder_root_folder[MAX_FILENAME_LENGTH];
+  float rolling_waterfall_recorder_max_file_size_in_mbytes;
+  float rolling_waterfall_recorder_min_disc_space_in_mbytes;
+  float rolling_waterfall_recorder_max_total_folder_size_in_mbytes;
+  char rolling_waterfall_record_name_prefix[MAX_FILENAME_LENGTH];
+  int enable_alarm_triggered_recorder;
+  int enable_mean_real_var_recorder;
+  char  alarm_triggered_recorder_root_folder[MAX_FILENAME_LENGTH];
+  float alarm_triggered_recorder_max_duration_in_seconds;
+  float alarm_triggered_recorder_max_total_folder_size_in_mbytes;
+  float alarm_triggered_recorder_min_disc_space_in_mbytes;
+  int alarm_triggered_waterfall_record_channel_range;
+  int alarm_triggered_raw_data_record_channel_range;
+  int prealarm_data_period_sec;
+  int max_expected_simultaneous_alarm_num;
+}ProcessedDataRecorderParameters;
+
+
+typedef struct
+{
+  int number_of_channels_in_one_sample;
+} InterrogatorDataParameters;
+
+typedef struct {
+	int channel_number;
+	int adc_sample_number;
+}Fibers;
+
+typedef struct {
+	int communication_path;
+	std::string com_port_name;
+    std::string data_dest_mac_address;
+	std::string data_dest_ip;
+	std::string data_src_ip;
+	int data_dest_port;
+	std::string com_dest_mac_address;
+	std::string com_dest_ip;
+	int  com_dest_port;
+	std::string src_mac_address;
+	int src_data_port;
+	int com_src_port;
+	int rawdata_is_big_endian;
+	int auto_open_laser;
+} InterrogatorCommunicationParameters;
+
+typedef struct {
+	int fiber_number;
+	int test_data_enable;
+	int switching_time;
+	int frequency_override;
+	int frequency;
+	std::vector<Fibers>fibers;
+	int input_priority;
+	int	multi_input_zone_offset;
+}Midas3FiberParameter;
+
+typedef struct {
+	int sensor_data_length_in_samples;
+	int average_length_in_samples;
+	int test;
+}Midas2FiberParameter;
+typedef struct {
+
+	int interrogator_usage_type;
+	std::string interrogator_usage_type_str;
+	int interrogator_device_type;
+	std::string interrogator_device_type_str;
+	Midas3FiberParameter midas3_fiber_parameter;
+	Midas2FiberParameter midas2_fiber_parameter;
+}InterrogatorFiberParameters;
+
+
+
+
+typedef struct
+{
+  int enable_rolling_recorder;
+  char rolling_recorder_root_folder[MAX_FILENAME_LENGTH];
+  float rolling_recorder_max_file_size_in_mbytes;
+  float rolling_recorder_min_disc_space_in_mbytes;
+  float rolling_recorder_max_total_folder_size_in_mbytes;
+  int rolling_recorder_compression_ratio;
+  char ondemand_recorder_root_folder[MAX_FILENAME_LENGTH];
+  float ondemand_recorder_max_file_size_in_mbytes;
+  int max_on_demand_record_length_in_seconds;
+} RecorderMainParameters;
+
+typedef struct
+{
+  int enable_rawdata_recording;
+  char record_name[MAX_FILENAME_LENGTH];
+  int auto_stop;
+  int record_duration;
+  std::string record_notes;
+  int record_selected_channel_zones;
+  std::vector<OndemandRecordingChannelZone> ondemand_recording_channel_zones_;
+  time_t record_start_time;
+  int record_timer;
+} OnDemandRecorderParameters;
+
+
+typedef struct
+{
+  int dump_alarms_to_file;
+  int dump_power_to_file;
+  int dump_probabilities_to_file;
+} DPUOutputConfigurationParameters;
+
+typedef struct
+{
+  int enable_preprocessor;
+  int number_of_samples_in_one_window;
+  int number_of_openmp_threads;
+  int enable_activity_detection;
+  int enable_normalization;
+  int enable_classification;
+  // int enable_line_cut_detection;
+} PreprocessorParameters;
+
+typedef struct
+{
+  int file_data_source_enable;
+  int file_data_source_loop;
+  char file_data_source_name[MAX_FILENAME_LENGTH];
+  int file_data_source_number_of_channels;
+  int file_data_source_channel_offset;
+  float read_time_interval_between_windos_in_ms;
+  int file_data_source_sampling_rate;
+} FileDataSourceParameters;
+
+typedef struct
+{
+  float detection_threshold_db;
+  int alarm_timeout_duration_in_ms;
+  int create_alarm_for_unclassified_activities;
+  int activity_map_dilation_window_size;
+  int enable_activity_map_erosion;
+  int track_gate_size;
+  int minimum_track_gate_size_digging;
+  int center_channel_selection_power_averaging_window;
+} ActivityDetectionParameters;
+
+typedef struct
+{
+  float target_power_mean_db;
+  float target_power_std_db;
+  int initialize_power_mean_with_first_value;
+  float initial_power_std_db;
+  float minimum_power_std_db_1st_order_coefficient;
+  float minimum_power_std_db_2nd_order_coefficient;
+  float minimum_power_std_db_3rd_order_coefficient;
+  float minimum_power_std_db_4th_order_coefficient;
+  float mean_outlier_threshold_in_sigmas;
+  float var_outlier_threshold_in_sigmas;
+  float model_update_probability_for_outliers;
+  int number_of_fast_model_updates;
+  float mean_model_update_factor_fast;
+  float mean_model_update_factor_slow;
+  float var_model_update_factor_fast;
+  float var_model_update_factor_slow;
+} PowerNormalizationParameters;
+
+typedef struct {
+	size_t cuda_gpu_mem_limit;
+	std::string model_file_path;
+	std::string model_file;
+	std::string input_name;
+	std::vector<int64_t>input_shape;
+	std::vector<std::string>output_names;
+	std::vector<std::vector<int64_t>>output_shapes;
+	std::string feature_mean_file;
+	std::string feature_mean_file_path;
+	std::string feature_std_file;
+	std::string feature_std_file_path;
+	int hop_length_in_samples;
+	float fmin;
+	float fmax;
+}FeatureExtractorModelFileParameters;
+typedef struct {
+	size_t tensorrt_workspace_size;
+	std::string model_file_path;
+	std::string model_file;
+	std::string input_name;
+	std::vector<int64_t>input_shape;
+	std::string output_name;
+	std::vector<int64_t>output_shape;
+	std::string tensorrt_cache_path;
+}ActivityClassifierModelFileParameters;
+
+typedef struct {
+	std::string model_file;
+	std::string model_file_path;
+	std::string  input_name;
+	std::string output_name;
+	size_t tensorrt_workspace_size;
+	std::string tensorrt_cache_path;
+	int image_width;
+	int image_height;
+}PowerProbabilityClassifierModelFileParameters;
+
+typedef struct {
+	FeatureExtractorModelFileParameters feature_extractor_model_file_parameters;
+	ActivityClassifierModelFileParameters activity_classifier_model_file_parameters;
+	PowerProbabilityClassifierModelFileParameters power_probability_classifier_model_file_parameters;
+	int number_of_hops;
+	int number_of_mels;
+	int number_of_classes;
+	float sampling_rate;
+}ModelFilesParameters;
+
+typedef struct
+{
+  
+  int window_size_in_samples;
+  std::string model_folder_path;
+  //std::string nn_graph_file_2D;
+  //std::string nn_graph_file_2D_path;
+  // char feature_mean_file[MAX_FILENAME_LENGTH];
+  // char feature_std_file[MAX_FILENAME_LENGTH];
+  // char nn_graph_file_2D[MAX_FILENAME_LENGTH];
+  //std::string nn_graph_file;
+  char nn_graph_file_power_prob_2D[MAX_FILENAME_LENGTH];
+  //int nn_mode; //0->1D, 1->2D, ... might add mixture of both
+  int sensitive_channel_start; // ranges that are far in the end region 
+  int use_detection_for_classification;
+  float detection_power_threshold_db;
+  int power_prob_time_lag;
+  int activity_timeout_duration_in_power_samples;
+  int number_of_activity_types_;
+  int selected_preprocessing_algorithm_idx;
+  float minimum_power_std_db;
+  float initial_power_mean_db;
+  float outlier_threshold_in_real_power_db;
+  int waterfall_output_subsampling_ratio;
+  std::vector<std::string> activity_labels;
+  std::unordered_map<std::string, int> id;
+  std::unordered_map<std::string, std::vector<int>> class_decision_time_window;
+  std::unordered_map<std::string, int> min_adj_act_num; // number of adjacent activities required for pushing into queue (3 for digging, 5 for excavating)
+  std::unordered_map<std::string, int> min_time_lag_btw_periodic_activities; // required time lag to push periodic activities into queue
+  std::unordered_map<std::string, std::vector<int>> class_decision_min_act_num_required;
+  std::unordered_map<std::string, std::vector<float>> declaration_probability;
+  std::unordered_map<std::string, int> report_activity_flag;
+  std::unordered_map<std::string, std::vector<float>> classification_power_threshold;
+  std::unordered_map<std::string, std::vector<float>> activity_detection_power_threshold;
+  ModelFilesParameters model_files_parameters;
+} ClassificationModeCommonParameters;
+
+typedef struct
+{
+  int use_erosion_for_excavation;
+  int enable_jumpAndWalk;
+  int enable_marathon_solver;
+  int jump_detection_channel_window;
+  int jump_detection_channel_threshold;
+  float jump_detection_digging_probability_threshold;
+  int enable_set_probs_to_zero_for_vehicles;
+  int set_probs_to_zero_for_vehicles_half_window;
+  std::vector<int> jumpAndWalk_min_act_num_required;
+  int enable_walkAfterExc;
+  int minChannelSupportForExc;
+  int maxChannelSupportForExc;
+  int enableCutterForExc;
+  float initial_prob_for_digging_run_avg;
+  float running_avg_prob_denom_decay;
+} ClassificationModeSpecialParameters;
+
+typedef struct
+{
+  int number_of_modes;
+  int number_of_classification_presets;
+  // int enable_earthquake_detection;
+  int default_classification_preset;
+  std::vector<std::string> mode_labels;
+  std::string selected_mode;
+  std::unordered_map<std::string, ClassificationModeCommonParameters> classification_mode_common_parameters;
+  std::unordered_map<std::string, ClassificationModeSpecialParameters> classification_mode_special_parameters;
+} ClassificationParameters;
+
+typedef struct
+{
+  std::string user_name;
+  std::string user_password;
+
+}UserAccounts;
+
+typedef struct {
+
+	boost::mutex iu_communicator_access_mutex;
+	std::map<std::string,std::string> status_messages;
+	std::map<std::string, InterrogatorCommand> interrogator_command_replies;
+	std::vector<std::string> interrogator_info_messages;
+	std::vector<std::string> interrogator_error_messages;
+	std::vector<std::string> interrogator_warning_messages;
+	InterrogatorConfigurations interrogator_configurations;
+	int check_laser_status;
+}IUCommunicatorMessageParameters;
+
+typedef struct {
+	std::vector<std::string> categories;
+	std::vector<int> enabled;
+}CategoriesEnabled;
+
+
+typedef struct {
+	int dump_higher_prob_spectrogram_inputs_to_file;
+	float spectrogram_dump_high_prob_thresh;
+	float norm_power_anding_thresh;
+	int spectrogram_dump_channel_start;
+	int spectrogram_dump_channel_end;
+	std::string spectrogram_folder;
+	CategoriesEnabled underground_categories_enabled;	
+	CategoriesEnabled fence_categories_enabled;
+	CategoriesEnabled* active_categories_enabled_ptr;
+}HighProbLogParameters;
+
+typedef struct {
+	int enable;
+	int alarm_on;
+	int predict_on;
+	int select_max_energy_channel;
+	int clip_range_to_blob_boundary;
+	int cluster_gate_in_in_channels;
+	int cluster_gate_out_in_channels;
+	int dilation_window_size;
+	int min_blob_width;
+	int min_displacement_to_declare_in_channels;
+	float norm_power_thresh_in_db;
+	int min_track_length_to_declare;
+	double min_allowed_velocity;
+	double track_drop_velocity_limit_in_kmh;
+	double max_allowed_velocity;
+    int max_consecutive_missed_obs_for_declared_tracks;
+	int min_consecutive_missed_obs_for_declared_tracks;
+	int min_consecutive_missed_obs_for_nondeclared_tracks;
+	float max_gap_path_length_ratio;
+	int merge_close_obs_lim;
+	float recent_obs_density_thresh;
+	float sigma_acceleration;
+	float pos_measurement_err;  // parameters up to here are read from config, rest are hard coded or calculated
+	int recent_obs_density_hist_length;
+	float score_thresh;
+	float freq;
+	int pos_history_sampling_interval;
+	int pos_history_max_length;
+	int channel_num;
+	int dilated_channel_num;
+	int max_gate_extend_from_center;
+} JPDATrackerParameters;
+
+typedef struct {
+	int enable;
+	std::unordered_map<std::string, JPDATrackerParameters> all_modes_parameters;
+} JPDATrackerParametersAll;
+
+typedef struct {
+	std::string file_format;
+	int64_t rotation_size;
+	int64_t max_size;
+	int64_t min_free_space;
+	int64_t max_files;
+	std::string target_folder;
+} LoggerParameters;
+
+
+typedef struct {
+	std::vector<int> zone_channel_range;
+	std::vector<std::tuple<std::string,int>> activity_types;
+}ChannelRange;
+
+typedef struct {
+	std::vector<ChannelRange> ranges;
+	int total_channel_number;
+	std::string model_folder_path;
+	std::string cache_posix;
+	// std::string feature_mean_file;
+	// std::string feature_std_file;
+	// std::string model_file;
+	// std::string feature_mean_file_path;
+	// std::string feature_std_file_path;
+	// std::string model_file_path;
+	// std::string nn_graph_file_2D_pow_prob;
+	// std::string nn_graph_file_2D_pow_prob_path;
+	float* standardization_mean;
+	float* standardization_std;
+    std::string zone_definition;
+	bool is_active_zone;
+	ModelFilesParameters model_files_parameters;
+}Zone;
+
+typedef struct {
+	std::vector<Zone> all_zones;
+    std::map<std::string,Zone> config_defined_zones;
+	std::vector<std::map<int,int>> map_channels_to_activity_types;/* report activity flag tutuyor. 0-1000 girilmiş ise 0-1000 arası her kanal için aktivite tipini ve report_activity_flag'ini tutuyor.Aktivite tipini string olabilirdi. Activite Type'ın kod içinde probability_accumulator.h dosyasında sayısal karşılıkları var ve bu sayısal karşılıkları tutuluyor:
+		const int numberOfOutputClasses_ = 7;
+		const int actDigging = 0;
+		const int actWalking = 1;
+		const int actVehicle = 2;
+		const int actExcavate = 3;
+		const int actNoise = 4;
+		const int actFenceClimb = 5;
+		const int actFenceCut = 6;
+	*/
+}ZoneParameters;
+
+//calibration config 
+typedef struct {
+	// float minimum_power_std_db;
+	std::vector<ChannelSpecificFilter> channel_specific_filters;
+	std::vector<ChannelSpecificMinimumPowerStdCoeff> channel_specific_minimum_power_std_coeffs;
+	std::vector<ChannelSpecificClassificationPresets> channel_specific_classification_presets;
+	int max_number_of_channels_to_display_on_gui_midas2_usage;
+	 std::vector<int> max_number_of_channels_to_display_on_gui_midas3_usage;
+	int fiber_length_in_number_of_channels_midas2_usage;
+	 std::vector<int> fiber_length_in_number_of_channels_midas3_usage;
+	// float outlier_threshold_in_real_power_db;
+	int fiber_length_in_number_of_channels;
+	int max_number_of_channels_to_display_on_gui;
+	int number_of_channels_offset;
+	ZoneParameters zone_parameters;
+}PerformanceSettingsParameters;
+
+
+// this config for external interface sucha as MSM.
+typedef struct {
+	int gui_interface_tcp_server_port;
+	int enable_cit_messages;
+ }ExternalInterfaceParameters;
+
+
+typedef struct {
+	std::string db_name;
+	std::string db_password;
+	int db_port;
+	std::string db_user;
+	int statistic_recorder_enable;
+}DatabaseParameters;
+
+typedef struct {
+	DatabaseParameters db_parameters;
+}StatisticParameters;
+
+typedef struct {
+  int train_channel_range_digging;
+  int train_channel_range_excavator;
+  int test_channel_range_digging;
+  int test_channel_range_excavator;
+  int max_digging_count;
+  int max_excavator_count;
+}AlarmAnalyzerParameters;
+
+typedef struct {
+	int weak_signal_enable;
+	int weak_signal_switch_index;
+	float signal_multiplier;
+	float weak_signal_threshold;
+	float change_detection_threshold;
+	int check_signal_at_start_param;
+	int min_number_of_samples_for_weak_signal;
+}WeakSignalParameters;
+
+struct LineCutDetectionParameters {
+	int enable;
+	int calc_electronic_noise_lim_dynamically;
+	float electronic_noise_lim;
+	int64_t n_filt;
+	float thresh;
+	int channel_diff_lim_from_end;
+};
+
+struct EarthquakeDetectionParameters {
+	int enable;
+	float norm_power_thresh;
+	float dominant_channel_ratio;
+};
+
+typedef struct {
+	ProcessedDataRecorderParameters processed_data_recorder_parameters;// waterfall burada tutuluyor.
+	InterrogatorCommunicationParameters interrogator_communication_parameters;
+	InterrogatorFiberParameters interrogator_fiber_parameters;
+	DPUOutputConfigurationParameters DPU_output_configuration_parameters;
+	RecorderMainParameters recorder_main_parameters;//rolling_raw ile on_demand datalar tutuluyor.
+	PreprocessorParameters preprocessor_parameters;// dpu_default parametreleri okundukça buraya yazılır. Bu parametrelerden number_of_**_threads 6 seçilmiş. 4 olarak kullanılıyor
+	FileDataSourceParameters file_data_source_parameters;
+	PowerNormalizationParameters power_normalization_parameters;
+	ActivityDetectionParameters activity_detection_parameters;
+	ClassificationParameters classification_parameters;
+	//JPDATrackerParameters jpda_tracker_parameters;
+	JPDATrackerParametersAll jpda_tracker_parameters_all;//
+	LoggerParameters logger_parameters; // log doayalarının output yapısı, kaç günde , kaç adet dosya oluştuğunda eskilerin silineceği gibi değerleri tutuyor.
+	PerformanceSettingsParameters performance_settings_parameters;//Son kullanıcının çok fazla kullanıdığı bir yer. kanal sayısı,çeşitli algoritma parametreleri tutuluyor.
+	ExternalInterfaceParameters external_interface_parameters;/*2 parametre alıyor.
+		- int gui_interface_tcp_server_port:19193 : bu port bilgisi önemli bu port aracılığı ile tcp üzerinden socket açıılıyor. Bu soket üzerinden dpu yazılımının oluşturduğu waterfall, Alarm , Ses verileri TCP üzerinden bu 	soket yardımı ile MSM yazılımına gönderiliyor. 
+		- enable_cit_messages : Önemli cit mesajları yine bu port üzerinden gönderiliyor:
+				- Örneğin FPGA kartı çok ısındığı zaman ısınmasını ifade ettiğimiz bir cit mesajı gidiyor. 
+				- Ethernet üzerinden raw data alamadığımız zaman raw_data not received mesajı gidiyor.
+				- Hat kesilmesi olduğu zaman hattın kesildiği kanalı belirten bir cit mesajı gidiyor. Bu sayede mirsad'a kadar gidebiliyor bu mesaj. Mirsad operatörü takip edebiliyor.
+	*/
+	StatisticParameters statistic_parameters;// Dpu içerisinde yer alan alarm_analyzer kodu var. Bu oluşan bir alarmın seviyesini belirtiyor. Seviyesinden kasıt ne kadar önem arzediyor, dikkate alınması gerekiyor. kırmızı-sarı-yeşil arasında değişiyor. alarm_analyzer: 200 milisaniyede bir alarm üretiyor. 1sn'de oluşan en yüksek darbe sayısını veritabanına yazıyor.
+	AlarmAnalyzerParameters alarm_analyzer_parameters;// alarm renklendirme işlerini yapan parametreler tutuluyor.
+	WeakSignalParameters weak_signal_parameters;//??
+	LineCutDetectionParameters line_cut_detection_parameters;//?
+	EarthquakeDetectionParameters earthquake_detection_parameters;//?
+}DPUConfigFilesDefaultParameters;
+
+namespace global_constants {
+	int constexpr secans_act_digging{ 13 };
+	int constexpr secans_act_human{ 1 };
+	int constexpr secans_act_vehicle{ 3 };
+	int constexpr secans_act_excavate{ 14 };
+	int constexpr secans_act_noise{ 0 };
+	int constexpr secans_act_climb{ 15 };
+	int constexpr secans_act_cut{ 16 };
+	int constexpr secans_act_earthquake{ 40 };
+	int constexpr secans_act_rockfall{ 17 };
+
+	int constexpr tracker_diff_mode_num{ 9 };
+	int constexpr track_digging_idx{ 0 };
+	int constexpr track_excavator_idx{ 1 };
+	int constexpr track_human_idx{ 2 };
+	int constexpr track_vehicle_idx{ 3 };
+	int constexpr track_other_idx{ 4 };
+	int constexpr track_climb_idx{ 5 };
+	int constexpr track_cut_idx{ 6 };
+	int constexpr track_earthquake_idx{ 8 };
+	int constexpr track_rockfall_idx{ 7 };
+
+	int constexpr actDigging = 0;
+	int constexpr actWalking = 1;
+	int constexpr actVehicle = 2;
+	int constexpr actExcavate = 3;
+	int constexpr actNoise = 4;
+	int constexpr actFenceClimb = 5;
+	int constexpr actFenceCut = 6;
+	int constexpr actRockFall = 7;
+	int constexpr actEarthquake = -1; // This act is redundant it is not used so it is set to -1
+	int constexpr numberOfOutputClasses{ 8 };///////////////
+
+	const std::string other_cat_name{ "other" };
+	const std::array<std::string, tracker_diff_mode_num> tracker_mode_names{ "digging", "excavator", "human", "vehicle", other_cat_name, "climb", "cut", "rockfall","earthquake"};
+	const std::array<int, tracker_diff_mode_num> tracker_mode_indices{ track_digging_idx, track_excavator_idx, track_human_idx, track_vehicle_idx, track_other_idx, track_climb_idx, track_cut_idx, track_rockfall_idx, track_earthquake_idx };
+}  // end of namespace global_constants
+
+class DPUConfig
+{
+public:
+
+  DPUConfig(std::string,std::string,std::string);
+  ~DPUConfig();
+  void Init();
+  InterrogatorDataParameters interrogator_data_parameters_;
+  UserAccounts user_accounts_;
+  boost::mutex config_access_mutex_;
+  boost::mutex dpu_pipeline_access_mutex_;
+  std::string default_config_folder_;
+  std::string application_config_folder_;
+  std::string user_config_folder_;
+  std::string  user_accounts_file_;
+  MSMMessages *msm_messages_;
+  AlarmAnalyzerMessageQueue* alarm_analyzer_message_queues_;
+  IUCommunicatorMessageQueue* iu_communicator_message_queues_;
+  IUCommunicatorMessageParameters iu_communicator_message_parameters_;
+  OnDemandRecorderParameters ondemand_recorder_parameters_;
+  ProcessedDataRecorderParameters processed_data_recorder_parameters_;
+  InterrogatorCommunicationParameters interrogator_communication_parameters_;
+  InterrogatorFiberParameters interrogator_fiber_parameters_;
+  DPUOutputConfigurationParameters DPU_output_configuration_parameters_;
+  RecorderMainParameters recorder_main_parameters_;
+  PreprocessorParameters preprocessor_parameters_;
+  FileDataSourceParameters file_data_source_parameters_;
+  PowerNormalizationParameters power_normalization_parameters_;
+  ActivityDetectionParameters activity_detection_parameters_;
+  ClassificationParameters classification_parameters_;
+  // JPDATrackerParameters jpda_tracker_parameters_;
+  JPDATrackerParametersAll jpda_tracker_parameters_all_;
+  LoggerParameters logger_parameters_;
+  PerformanceSettingsParameters performance_settings_parameters_;
+  ExternalInterfaceParameters external_interface_parameters_;
+  DPUConfigFilesDefaultParameters dpu_config_files_default_parameters_;
+  StatisticParameters statistic_parameters_;
+  AlarmAnalyzerParameters alarm_analyzer_parameters_;
+  WeakSignalParameters weak_signal_parameters_;
+  LineCutDetectionParameters line_cut_detection_parameters_;
+  EarthquakeDetectionParameters earthquake_detection_parameters_;
+  std::unordered_map<std::string, int> activity_type_mapping_;
+  std::unordered_map<int, std::string> activity_names_to_report_;
+};
+
+#endif // DPUCONFIG_H

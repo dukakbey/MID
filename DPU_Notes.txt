@@ -58,6 +58,8 @@ dpu_main.cpp:
 	dpu_config :
 		- config dosyalarındaki
 		- dpu_config_factory'de constructor parametlerei olan 3 config dosyasının içeriğindeki parametreler dpu_config.h 'de tutulan değişkenlere map'leniyor. 
+	- global sabitler global_constant namespace'inde tutuluyor.
+
 dpu_config.h:
 		- ProcessedDataRecorderParameters: waterfall burada tutuluyor.
 BOOST:
@@ -79,3 +81,8 @@ Visual Studio Properties settings:
         - Bu mimaride CPU'da bazı işlemler oluyor ve CPU üzerinde işlemleri hızlandırıyor.
         - Bu sekmede Runtime Library ayarı multithread dll (md) olmalıdır.  
 
+model_info.json:
+	- tensorrt_workspace_size: 104857600 : 10gb gpu'da ayrılacak bellek sınırı. Bu ana modelimizin (midas_model_best_freeze2D.onnx) config dosyasıdır.
+	- tensorrt_cache_path:  
+		- D://tensorrt_cache_activity_classifier_underground_model*** . Model için gpu'da yapılacak cache'leme için path. 
+		- her açılışta modelin gpu'ya taşınmasını engelliyor. Zamanında her açılışta modelin aktarılması 1 dk sürüyordu.
