@@ -86,3 +86,5 @@ model_info.json:
 	- tensorrt_cache_path:  
 		- D://tensorrt_cache_activity_classifier_underground_model*** . Model için gpu'da yapılacak cache'leme için path. 
 		- her açılışta modelin gpu'ya taşınmasını engelliyor. Zamanında her açılışta modelin aktarılması 1 dk sürüyordu.
+	- feature_extractor: her kanal için 32*48'lik window'lar çıkarıyor. 
+	- 
