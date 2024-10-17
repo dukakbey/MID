@@ -87,4 +87,44 @@ model_info.json:
 		- D://tensorrt_cache_activity_classifier_underground_model*** . Model için gpu'da yapılacak cache'leme için path. 
 		- her açılışta modelin gpu'ya taşınmasını engelliyor. Zamanında her açılışta modelin aktarılması 1 dk sürüyordu.
 	- feature_extractor: her kanal için 32*48'lik window'lar çıkarıyor. 
-	- 
+
+**Sistemde olmayan bir parametre eklendiğinde:
+	- öncelikle config.h'a ekle.
+	- sonrasında config_parser'da 
+
+ders 6 :
+bool ParseConfigFile: dosyadan configleri alma işlemini tetikliyor.
+void SaveJSONToFile: kullanıcının girdiği ile default arasındaki farkı buluyor.
+string JsonToConfig: 
+ConfigToJason: web arayüzüne gönderirken.
+
+!!!! dpu_*.cfg dosyalarından configleri okurken dosyada parametrelerde yer alan hataları handle eden try catch bloğu yok. Yazılım patlıyor.
+ 
+interrogator_device_types:
+	- single
+	- redundant
+	- seperate
+
+fiber number : 
+communication_path: sorgulayıcı cihazın komut alma ve gönderme path'ini değiştirmek için kullanılan fonksiyonlar.
+	- 0: serial port
+	- 1: ethernet
+interrogator_usage_types:
+	- 0 : single
+	- 1 : redundant
+	- 2 : seperate
+
+fiber_number:
+	- 1 : sadece fiber-1'den data gelir.
+	- 2 : sadece fiber-2'den data gelir.
+	- 3 : fiber-1 ve fiber-2'den data gelir.
+
+WebSocketRequestResponder: DPUServer içerisinde bir sınıf. DPU localhost:99 web arayüzü üzerinden gelen istekler DPUServer'a geliyor.	
+DPUServer: 
+	- Hem web arayüzünü ayağa kaldıran hem de web arayüzünden gelen istekleri dinleyen dinleyici bir sınıf. 
+
+!! sahada şöyle bir durum var fragmentasyonun yoğun olduğu bazı sensörlerde (diski gitmiş olan,hdd kullanan) ne kadar yazılımda recor'derda (raw data, alarm ticker,ses verisi) multithreading kullansak da bazen waterfall takılabiliyor. çözüm:
+	- dpu_default_recorder.cfg'de target_folder'a D'den C'ye taşı.
+
+ders 7 : DPU'dan raw data nasıl geliyor kısmına odaklanıldı:
+	- interrogator_device_packet_structere.docx: DPU'nun raw data'yı düzgün bir şekilde parse etmesini sağlayacak adımlar.
