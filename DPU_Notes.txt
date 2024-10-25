@@ -112,11 +112,26 @@ interrogator_usage_types:
 	- 0 : single
 	- 1 : redundant
 	- 2 : seperate
-
+interrogator_device_type:
+	- 0: midas v1.5
+	- 1: midas v2
+	- 2: midas v3a
+	- 3: midas v3
+	- 4: midas v4
 fiber_number:
 	- 1 : sadece fiber-1'den data gelir.
 	- 2 : sadece fiber-2'den data gelir.
 	- 3 : fiber-1 ve fiber-2'den data gelir.
+
+underground activity_types:	
+	- human
+	- vehicle
+	- digging
+	- excavator
+	
+fence activity_types:
+	- climb 
+	- cut
 
 WebSocketRequestResponder: DPUServer içerisinde bir sınıf. DPU localhost:99 web arayüzü üzerinden gelen istekler DPUServer'a geliyor.	
 DPUServer: 
@@ -124,7 +139,7 @@ DPUServer:
 
 !! sahada şöyle bir durum var fragmentasyonun yoğun olduğu bazı sensörlerde (diski gitmiş olan,hdd kullanan) ne kadar yazılımda recor'derda (raw data, alarm ticker,ses verisi) multithreading kullansak da bazen waterfall takılabiliyor. çözüm:
 	- dpu_default_recorder.cfg'de target_folder'a D'den C'ye taşı.
-
+================================
 ders 7 : DPU'dan raw data nasıl geliyor kısmına odaklanıldı.:
 interrogator_device_packet_structere.docx: 
 - DPU'nun raw data'yı düzgün bir şekilde parse etmesini sağlayacak adımlar.
@@ -157,6 +172,8 @@ Yukarıda anlatılan mekanizmayı uygulayan sınıf DPU Pipeline:
 Pipeline:
 	bu paketler farklı thread'ler halinde birbirleriyle sürekli messageQ üzerinden haberleşiyor. Kuyruğa raw data'nın pointer'ları yazılıyor.İlk 3'ü ortak bir messageQ kullanılıyor. Bu 3 mesajın ortak kullanıdığı message Q preproccessor üzerinde yer alıyor: AllocateBuffers(). Kuyrukta 20*400*5150 2byte'lık veri saklanıyor.
 	1) data_source: 
+		- udp_data_source:  sorgulayıcı cihazdan 4660 portundan gelen verinin alınmasını sağlıyor.
+		- file_data_source: sorgulayıcı varmış gibi dosyadan okuma yaparak işlem yapmamızı sağlar.
 	2) raw_data_mediator: 
 		- Amacı raw data kaydı yapmak.  
 		- alınan raw data buraya gönderilir. 2GB'lik dosyalar halinde kayıt yapılır.
@@ -176,7 +193,7 @@ Pipeline:
 
 UDPDataSource:
 	- burdan raw data 400*5150 2byte olarak iletiliyor.
-
+========================================
 ders 8: DPU'dan raw data nasıl geliyor kısmına odaklanıldı.:
 
 udp_data_source.cpp:
@@ -186,10 +203,10 @@ udp_data_source.cpp:
 raw_data_mediator:
  - Aracı bir sınıf asıl işi yapacak sınıflara raw_data yolluyor(rolling_raw_data_recorder,ondemand_raw_data_recorder). 
  -    
- 
+================================ 
 ders 9: rolling_raw_data kısmına odaklanıldı.:
 
-
+================================
 ders 10: onDemand_raw_data kısmına odaklanıldı.:
 * udp_data_source'dan gelen data raw_data_mediator'a geliyor. Mediator de aldığı raw data'ları rolling_raw_data'ya ve onDemand_raw_data'ya yolluyor.
 * element_main_loop  data'nın yazılğı fonksiyon.
@@ -197,3 +214,35 @@ ders 10: onDemand_raw_data kısmına odaklanıldı.:
 ! writing_packet_byte_size_: Diske veriyi büyük boyutta yazmayı sağlıyor. çok düşük boyutta çank'lar halinde veri yazıldığı zaman diskin bozulma olasılığı artıyor.
 ! max_number_of_gui  ?
 - windows_size_in_bytes: max_number_of_gui *400* 2 byte  bir iterasyonda kaydedilecek veri boyutu.
+
+=======================
+ders 11: onDemand_raw_data,file_datasource_enable kısmına odaklanıldı.:
+* Midas 2 cihazı hep 5150 kanal olarak ayarlanıyor. sahada 3000 kanal olsa bile 5150 olarak ayarlanır. frekans değeri değişmemesi için.
+
+writeDataToFile:
+	- buffer_read_ptr: 5*5150'nin pointer'ı
+	- number_of_channels_offset: 
+	- max_number_of_channels_to_display_on_gui : 400*5150'lik verinin her kanaldan 400*max_number_of_channels_to_display_on_gui'yi almasını sağlıyor.
+	- record_byte_ptr
+CurrentRollingRecordFileOperations():
+	- dosya kapatma işlemi burda oluyor.
+	- stop'a basıldığında veya autoStop açıksa timer ile yazılım durduruluyor.
+	- 
+WriteRecordDescriptionFile():
+	- cihaz tipi ne, cihazın modu ne, record_date, cihaz kullanım tipi gibi bilgileri dosyaya yazıyor.
+
+pipeline devam- data source: 
+	-*** run_time_files=>config=>default=>dpu_default_development.cfg içinde file_datasource_enable'ı 1 yaparsak artık file'dan okur.
+
+processor: 
+	- udp_data_source -> raw_data_mediator -> preproccessor şeklinde akış ile buraya raw data geliyor.  processor'un amacı bu verilerin işlenmesi.
+	- ham veri waterfall, ses, spektram , alarm'a dönüştürülüyor. Preprocessor içinde tetikleniyor.
+	- number_of_channels_offset: seperate modda anlamsız ,düz sinyali bittiği yer bilgisi offset'liyor.
+offset = max_number_of_channels - max_number_of_gui
+
+dpu_default_communication.cfg :
+	- "fibers" altında "channel_number" hiç değişmiyor. Değişirse frekans değişir. dpu_default_performance_settings.cfg ile oynanır. "PerformanceSettingsParameters" altında midas*_usage değiştirilir.
+
+multi_input_zone_ofset: çok kullanılan birşey değil.
+============================
+ders 12:
