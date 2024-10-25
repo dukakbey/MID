@@ -197,7 +197,7 @@ void UDPDataSource::HandleReceive(const boost::system::error_code& error, std::s
       {
         // if the packet is in the future
         int64_t end_cnt_diff = ((int64_t)UDP_packet_header_->frame_count) - ((int64_t)window_end_frame_count_);
-        if (end_cnt_diff > 0 || end_cnt_diff < INT_MIN)
+        if (end_cnt_diff > 0 || end_cnt_diff < INT_MIN)//400 sample'a ulaştığı zaman bu if'e giriyor.
         {
           // conceal lost samples
            ConcealLostSamples();
@@ -254,7 +254,7 @@ void UDPDataSource::HandleReceive(const boost::system::error_code& error, std::s
 			LOG_DEBUG << "****  there is no free buffer, write packets to a temporary memory location that will be ignored ****";
           }
         }
-        int64_t start_cnt_diff = ((int64_t)UDP_packet_header_->frame_count) - ((int64_t)window_start_frame_count_);
+        int64_t start_cnt_diff = ((int64_t)UDP_packet_header_->frame_count) - ((int64_t)window_start_frame_count_);//400'e ulaşmadığı zaman buradaki yapı çalışıyor.
         // if the packet is not in the past
         if (start_cnt_diff >= 0 || start_cnt_diff < INT_MIN)
         {

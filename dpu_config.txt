@@ -626,7 +626,7 @@ typedef struct {
 	WeakSignalParameters weak_signal_parameters;//??
 	LineCutDetectionParameters line_cut_detection_parameters;//?
 	EarthquakeDetectionParameters earthquake_detection_parameters;//?
-}DPUConfigFilesDefaultParameters;
+}DPUConfigFilesDefaultParameters; // burası sadece default parametreleri tutuyor. Sonrasında application ve user configler geldiğinde override ediliyor. alt kısımda yer alan configler ise son hali.
 
 namespace global_constants {
 	int constexpr secans_act_digging{ 13 };
@@ -666,10 +666,10 @@ namespace global_constants {
 	const std::array<int, tracker_diff_mode_num> tracker_mode_indices{ track_digging_idx, track_excavator_idx, track_human_idx, track_vehicle_idx, track_other_idx, track_climb_idx, track_cut_idx, track_rockfall_idx, track_earthquake_idx };
 }  // end of namespace global_constants
 
-class DPUConfig
+class DPUConfig//configlerin user ve application eklenmiş son hali. 
 {
 public:
-
+	
   DPUConfig(std::string,std::string,std::string);
   ~DPUConfig();
   void Init();
