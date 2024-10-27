@@ -243,5 +243,113 @@ dpu_default_communication.cfg :
 
 multi_input_zone_ofset: çok kullanılan birşey değil.
 ============================
-ders 12:
+ders 12 (preproccessor):
+
+dpu_default_communication.cfg:
+	- "fibers" altında "channel_number" hiç değişmiyor. Nanotam altyüklenici firma değiştirilmesini önermiyor. Performans sıkıntıları oluşabiliyor.
+
+mod'lar:
+	- single: tek kablo 
+		- 5150 kanal
+	- seperate: çift kablo
+		- her kablo 1000 kanal 
+	- redundant: 
+	 	- 2 kablo 1000 kanal çember yapıda.
+
+preprocessor.cpp:
+	- Data önce raw_data_mediator'a gelir sonrasında preprocessor'a gelir. Process initialize edilerek sürekli raw_data_mediator üzerinden sürekli raw data gelecek şekilde başlatılıyor.
+	- number_of_openmp_threads_: sayısı 4. Artırılırsa yazılımın daha hızlı bir şekilde çalışması sağlanır ama cpu kullanımı artar. 
 	- 
+
+int16_t :short integer
+
+line_cut_detection,line_cut algotiması:
+	- Hat kesilmesini kontrol ediyor.
+	- kesilirse kesildiği yerden  fiber'in sonlandığı yere kadar olan kısmı diğer fiber'den alıyoruz.
+	- redundant ve single'da tek bir line_cut algoritması çalışıyor.
+	- seperate mod'da 2 line_cut algoritması çalışıyor. Fiber 1 ve Fiber 2 hat kesilmesini kontrol ediyor.
+
+===================================================
+ders 13(preproccessor):
+weak_signal_detector:
+	- Bir süre önceki sinyal ile karşılaştırarak sinyalda azalma veya kopma olduğunu saptayan bir algoritma. 
+
+preproccessor'e raw datanın geldiği değişken :
+	- int16_t* in_buf = (int16_t*)full_buffer_chunk_.buffer_pointer;
+	- 
+ 
+absolute_channels ?:
+	- 0-2000 veya 0-5150 arası bir değerdir.
+	
+activity_count:
+	- ?? 
+===========================
+ders 14 (preproccessor):
+alarm bazlı kayıt:
+	- ALARM_TRIGGERED_RAW_DATA_RECORDER
+	- ALARM_TRIGGERED_AUDIO_RECORDER
+	- ALARM_TRIGGERED_WATERFALL_RECORDER
+
+rolling_waterfall_recorder.cpp:
+	- WriteDataToFile: max_number_of_gui kadar veriyi (5150 kanal) direk yazıyor. Windows mantığı olmadığı için daha kolay bir yazma işlemi.
+
+tcp_messages.h:
+	- WaterfallMessageHeader
+===============================
+ders 15 (preproccessor):
+	- 
+
+============================
+ders 17 (alarm_analyzer):
+	- 
+
+
+============================
+ders 18 (alarm_analyzer):
+
+============================
+ders 19 (alarm_analyzer, iu_communicator-MIDAS3_Komut_Mesaj_Parametre_2021 dokümanındaki komutlar anlatıldı):
+MIDAS3_Komut_Mesaj_Parametre_2021.10.01.xlsx dokümanı ? 
+
+
+
+============================
+ders 20 (dpu ile ilgili anlatım tamamlandı.,iu_communicator):
+C:/MIDAS/tools/nanotam_arayüz: burda Nanotam'ın kendi cihazları için ürettiği arayüzler yer alıyor.
+
+
+SVGL17 Yazılım Tasarım Tanımları Dokümanı_RevB_V2  ?? 
+
+============================
+ders 21 (iu_communicator):
+	- 
+
+
+============================
+ders 22 (iu_communicator):
+	- 
+
+
+
+
+============================
+ders 23 (iu_communicator,dpu_server.cpp):
+	- 
+
+
+
+============================
+ders 24 (request_responder,dpu_server, web_socket_request_responder.cpp):
+	- 
+
+
+============================
+ders 26 (.js kodlar):
+	- run_time_files -> html->9980 .js kodlar
+
+
+============================
+ders 27 (.js kodlar,arif yazılımı entegrasyonu,tcp_data_sink.cpp):
+	- run_time_files -> html->9980 .js kodlar
+
+
