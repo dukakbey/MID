@@ -1,5 +1,7 @@
 DPU
 ===========
+ders 1:
+
 DPU kaynak kod gitlab : http://192.168.21.86/
 Diğer kaynak kodlar: http://192.168.21.102
 
@@ -39,6 +41,22 @@ POCO:
 	- BSC dosyası, Source Browser dosyası anlamına gelir. Bu dosya, derlenen C++ projesindeki sembollerin ve kaynak kodun taranması ve incelenmesi için kullanılan bir dosyadır. 
 	- BSC dosyaları, projedeki sembollerin referanslarının hızlı bir şekilde aranmasına yardımcı olur ve Visual Studio gibi IDE'lerde "Go To Definition" ya da "Find All References" gibi özellikleri kullanırken arka planda çalışır.		
 	
+
+
+dpu_config.h:
+		- ProcessedDataRecorderParameters: waterfall burada tutuluyor.
+BOOST:
+	- boost::asio:io_service socket oluşturma ve multithreading işlemler için kullanılır.
+	- 
+
+Derleme:
+	- release_Od olarak derleniyor.
+	
+Kütüphaneleri Ekleme:
+	- visual studio Additional Include Directories  
+
+
+ders 2 (kütüphaneler devam): 
 dpu_main.cpp:
 	- _setmaxstdio(2048) : 2 gb anlık olarak dosya açabiliyoruz. DPU özelinde 2gb üstüne çıkmaya çalıştığında işletim sistemi sınır getiriyor, açamıyoruz. Mesela Alarm triger kayıtlarında aynı anda 500 alar oldu. Waterfall ses kayıtlarında raw data oluşturuluyor. Aynı anda yapılmaya çalışıldığında işletim sistemi sınır koyuyor. Alarmlar oluşmayabilir default 1 GB'di bu ayar ile 2gb'ye çıkarıldı.
 	- DPU_VERSION : commit'e göre elle git üzerinden güncellenmesi gerekiyor.
@@ -60,18 +78,6 @@ dpu_main.cpp:
 		- dpu_config_factory'de constructor parametlerei olan 3 config dosyasının içeriğindeki parametreler dpu_config.h 'de tutulan değişkenlere map'leniyor. 
 	- global sabitler global_constant namespace'inde tutuluyor.
 
-dpu_config.h:
-		- ProcessedDataRecorderParameters: waterfall burada tutuluyor.
-BOOST:
-	- boost::asio:io_service socket oluşturma ve multithreading işlemler için kullanılır.
-	- 
-
-Derleme:
-	- release_Od olarak derleniyor.
-	
-Kütüphaneleri Ekleme:
-	- visual studio Additional Include Directories  
-
 Visual Studio Properties settings:
     Build Event: 
         - Visual studio properties altında yer alan Build event kısmında Command Line adında bir ayarımız var. Burada her build işlemi gerçekleştiğinde çalışacak komut giriyoruz. Bu komut bize "version.h" oluşturuyor.
@@ -92,7 +98,74 @@ model_info.json:
 	- öncelikle config.h'a ekle.
 	- sonrasında config_parser'da 
 
+DPUConfigFactory:
+	- CreateDefaultZoneParameters: fence ya da underground çalışılacak bölgelerin belirlenmesini sağlıyor.
+
+
+===================================
+ders 3 (dpu_config):
+dpu_config:
+	- RecorderMainParameters: rolling_raw ve on_demand için 
+	
+	- preproccessorParameters:
+		- number_of_samples_in_one_windows: 400 => 2 boyutlu matris. Algoritmaya 5150*400'lük veri geliyor.
+		- number_of_openmp_threads: işi rahatlatmak için thread kullanımı artırılabilir ama bellek kullanımı artar. 
+	
+	- FileDataSourceParameters: 
+		- file_datasource_enable : 1 olursa dosyadan okur.
+		- file_data_source_loop: 1 olursa aynı data bittiği zaman tekrar tekrar oynatır.
+	- ClassificationParameters: 
+		-selected_mod: underground veya fence olabilir.
+
+	- Logger_Parameters:
+		- rotation_size: 10485760 (10 GB'ye ulaştığı zaman eski kayıtlı dosyaları sil) 
+		- max_size: 
+	- PerformanceSettingsParameters:
+		- son kullanıcının çok kullandığı parametreleri tutuyor.
+		- max_number_of_channels_to_display_on_gui: takip etmek istediğimiz kanal sayısı:
+			- Midas2 : 5150
+			- Midas3 : [1000,1000] => [1.fiber,2.fiber]
+		- zone_parameter:
+			- underground:
+				-range : hangi kanallar arası underground olacağını seçiyoruz.
+			- fence:
+				-range : hangi kanallar arası fence olacağını seçiyoruz.
+===================================
+ders 4 (dpu_config):
+dpu_config:
+	- fiber_length_in_number_of_channels: (linecut algoritmasının parametresi)
+		- Midas2 : 3000
+		- Midas3 : [1000,1000] => [1.fiber,2.fiber]
+	- zone_parameter: bir yazılım hem fence hem de underground modunda çalışabilir. Zone'lar bunu sağlıyor.
+			- underground:
+				-range : hangi kanallar arası underground olacağını seçiyoruz.
+			- fence:
+				-range : hangi kanallar arası fence olacağını seçiyoruz.
+			- vector<map<int,int>> map_channels_to_activity_types: her kanal'da aşağıdaki activity'lerin karşılıklarını tutuyor:
+					activity_name 		report_activity_flag
+				-  	human(1)				0
+				- 	vehicle(2) 				0		
+				- 	digging	(0)				1
+				- 	excavator(3)			2
+				- probability accumulator'den dolayı activity_name string değil.
+	- DPUConfigFilesDefaultParameters:
+		-ExternalInterfaceParameters :  boost tcp modülü ile soket açılıyor ve bu soket üzerinden dpu yazılımının oluşturduğu waterfall ,alarm ,ses verileri, cit mesajları TCP üzerinden MSM yazılımına gönderiliyor.
+			- gui_interface_tcp_server_port: 19193
+			- enable_cit_messages : 1
+			- Örnek Cit mesajları:
+				- FPGA ısındı
+				- ethernet üzerinden raw data alınamadığı zaman raw_data_not_received mesajı 
+		- AlarmAnalyzerParameters: 
+			- alarm 'ın derecelendirmesine göre renklendirme yapıyor.
+			- alarm kanalının 14 günlük activity count'larını tutar.
+		- StatisticRecorderParameters
+==========================================
+ders 5 (kütüphaneler devam):
+
+===============================================
 ders 6 :
+
+
 bool ParseConfigFile: dosyadan configleri alma işlemini tetikliyor.
 void SaveJSONToFile: kullanıcının girdiği ile default arasındaki farkı buluyor.
 string JsonToConfig: 
