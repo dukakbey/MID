@@ -55,8 +55,9 @@ Derleme:
 Kütüphaneleri Ekleme:
 	- visual studio Additional Include Directories  
 
-
+================================
 ders 2 (kütüphaneler devam): 
+
 dpu_main.cpp:
 	- _setmaxstdio(2048) : 2 gb anlık olarak dosya açabiliyoruz. DPU özelinde 2gb üstüne çıkmaya çalıştığında işletim sistemi sınır getiriyor, açamıyoruz. Mesela Alarm triger kayıtlarında aynı anda 500 alar oldu. Waterfall ses kayıtlarında raw data oluşturuluyor. Aynı anda yapılmaya çalışıldığında işletim sistemi sınır koyuyor. Alarmlar oluşmayabilir default 1 GB'di bu ayar ile 2gb'ye çıkarıldı.
 	- DPU_VERSION : commit'e göre elle git üzerinden güncellenmesi gerekiyor.
@@ -77,7 +78,7 @@ dpu_main.cpp:
 		- config dosyalarındaki
 		- dpu_config_factory'de constructor parametlerei olan 3 config dosyasının içeriğindeki parametreler dpu_config.h 'de tutulan değişkenlere map'leniyor. 
 	- global sabitler global_constant namespace'inde tutuluyor.
-
+	
 Visual Studio Properties settings:
     Build Event: 
         - Visual studio properties altında yer alan Build event kısmında Command Line adında bir ayarımız var. Burada her build işlemi gerçekleştiğinde çalışacak komut giriyoruz. Bu komut bize "version.h" oluşturuyor.
@@ -160,11 +161,40 @@ dpu_config:
 			- alarm kanalının 14 günlük activity count'larını tutar.
 		- StatisticRecorderParameters
 ==========================================
-ders 5 (kütüphaneler devam):
+ders 5 (dpu_config, config_factory, model_info.json):
+dpu_config:	
+	- başta default okunur sonrasında application son olarak da user.
+	- ModelFileParameters
+		- activity_classifier 
+			- tensorrt_cache_path:  
+			- D://tensorrt_cache_activity_classifier_underground_model*** . Model için gpu'da yapılacak cache'leme için path. 
+			- her açılışta modelin gpu'ya taşınmasını engelliyor. Zamanında her açılışta modelin aktarılması 1 dk sürüyordu.
 
+Underground: number_of_classes = 5
+	- digging
+	- excavator
+	- human
+	- vehicle
+	- noise
+
+fence: number_of_classes = 3
+	- climb
+	- cut
+	- noise
+
+config_factory:
+	- ParseConfigFile:
+		- application
+		- user
+		- model : underground modeli=> midas_model_best_freeze2D
+		* 
+* user 'da yani arayüzden default'la aynı değer girilirse user'dan bu değer silinir.
+* JsonToConfig işlemi yapılırken pocco'nun json kütüphaneleri kullanılıyor. 
+
+* FindDifferenceBetweenDefaultAndUserConfigParameters ?? :
+	- Java'da json 'ı sınıfa dönüştüren veya json dosyası ile sınıfı kıyaslayan fonksiyon var ama C++'da yok. Bu nedenle manuel olarak yapılıyor.
 ===============================================
-ders 6 :
-
+ders 6 (dpu_config son,) :
 
 bool ParseConfigFile: dosyadan configleri alma işlemini tetikliyor.
 void SaveJSONToFile: kullanıcının girdiği ile default arasındaki farkı buluyor.
@@ -172,6 +202,10 @@ string JsonToConfig:
 ConfigToJason: web arayüzüne gönderirken.
 
 !!!! dpu_*.cfg dosyalarından configleri okurken dosyada parametrelerde yer alan hataları handle eden try catch bloğu yok. Yazılım patlıyor.
+
+UpdateMaxNumberOfChannelsToDisplayOnGuiAndFiberLengthInNumberOfChannels(0) : 
+	- burda hangi zone kaç kanal olacak belirlenir.
+	- her zone'un kanal sayısı hesaplanıyor.
 
 communication_path: sorgulayıcı cihazın komut alma ve gönderme path'ini değiştirmek için kullanılan fonksiyonlar.
 	- 0: serial port
@@ -210,7 +244,9 @@ DPUServer:
 
 !! sahada şöyle bir durum var fragmentasyonun yoğun olduğu bazı sensörlerde (diski gitmiş olan,hdd kullanan) ne kadar yazılımda recor'derda (raw data, alarm ticker,ses verisi) multithreading kullansak da bazen waterfall takılabiliyor. çözüm:
 	- dpu_default_recorder.cfg'de target_folder'a D'den C'ye taşı.
-================================
+
+
+===================================================
 ders 7 : DPU'dan raw data nasıl geliyor kısmına odaklanıldı.:
 interrogator_device_packet_structere.docx: 
 - DPU'nun raw data'yı düzgün bir şekilde parse etmesini sağlayacak adımlar.
