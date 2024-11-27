@@ -56,30 +56,11 @@ Kütüphaneleri Ekleme:
 	- visual studio Additional Include Directories  
 
 ================================
-ders 2 (kütüphaneler devam): 
+ders 2 (kütüphaneler,config files,script.js): 
 
 dpu_main.cpp:
 	- _setmaxstdio(2048) : 2 gb anlık olarak dosya açabiliyoruz. DPU özelinde 2gb üstüne çıkmaya çalıştığında işletim sistemi sınır getiriyor, açamıyoruz. Mesela Alarm triger kayıtlarında aynı anda 500 alar oldu. Waterfall ses kayıtlarında raw data oluşturuluyor. Aynı anda yapılmaya çalışıldığında işletim sistemi sınır koyuyor. Alarmlar oluşmayabilir default 1 GB'di bu ayar ile 2gb'ye çıkarıldı.
-	- DPU_VERSION : commit'e göre elle git üzerinden güncellenmesi gerekiyor.
-    - DPU yazılımı 2 adet sinyal kullanıyor:
-        - TerminationSignalHandler: ctrl + c handle edilir.
-    - yazılımın çalışması için 3 temel şeye ihtiyaç var: 
-        - ilk önce config dosyalarını okuyor. Bunu yapan dpu_config_factory :
-            default_config_folder_ = ".\\run_time_files\\config\\default"; :yazılımı ayağa kaldırmak için minimum ihtiyaç duyduğu parametreler.
-            application_config_folder_="C:\\MIDAS\\config\\application";: sahaya göre değişen parametreler.
-            user_config_folder_="C:\\MIDAS\\config\\user"; : kullanıcının sahada değiştirmiş olduğu ayarlar. örneğin: sensörlerin ip'leri, seri portları farklı olabilir. saha aynı olsa da bu ayarlar bu katmanda değiştirilir.
-            web_server_root_folder_ = ".\\run_time_files\\html"; : 9980,9981 (son kullanıcı için  detay içermeyen 2. arayüz) sorgulayıcı cihazların ve DPU yazılımının ayarlarını yapabildiğimiz, algoritma parametrelerini,raw dataların takibini yapabildiğimiz değiştirebildiğimiz bir DPU arayüz var. Bu arayüz'ün HTML dosyalrının bulunduğu path.
-        - 
-    dpu_config_factory: 
-        - gelen json mesajlarını ayrıştırıyor:
-            - on_demand geldiğinde ona göre işlem yapıyor.
-            - update 'e tıklandığında bu işlemin update mi save mi olduğunu belirler.
-	dpu_config :
-		- config dosyalarındaki
-		- dpu_config_factory'de constructor parametlerei olan 3 config dosyasının içeriğindeki parametreler dpu_config.h 'de tutulan değişkenlere map'leniyor. 
-	- global sabitler global_constant namespace'inde tutuluyor.
-	
-Visual Studio Properties settings:
+	Visual Studio Properties settings:
     Build Event: 
         - Visual studio properties altında yer alan Build event kısmında Command Line adında bir ayarımız var. Burada her build işlemi gerçekleştiğinde çalışacak komut giriyoruz. Bu komut bize "version.h" oluşturuyor.
         -
@@ -88,35 +69,75 @@ Visual Studio Properties settings:
         - Bu mimaride CPU'da bazı işlemler oluyor ve CPU üzerinde işlemleri hızlandırıyor.
         - Bu sekmede Runtime Library ayarı multithread dll (md) olmalıdır.  
 
-model_info.json:
-	- tensorrt_workspace_size: 104857600 : 10gb gpu'da ayrılacak bellek sınırı. Bu ana modelimizin (midas_model_best_freeze2D.onnx) config dosyasıdır.
-	- tensorrt_cache_path:  
-		- D://tensorrt_cache_activity_classifier_underground_model*** . Model için gpu'da yapılacak cache'leme için path. 
-		- her açılışta modelin gpu'ya taşınmasını engelliyor. Zamanında her açılışta modelin aktarılması 1 dk sürüyordu.
-	- feature_extractor: her kanal için 32*48'lik window'lar çıkarıyor. 
+	model_info.json:
+		- tensorrt_workspace_size: 104857600 : 10gb gpu'da ayrılacak bellek sınırı. Bu ana modelimizin (midas_model_best_freeze2D.onnx) config dosyasıdır.
+		- tensorrt_cache_path:  
+			- D://tensorrt_cache_activity_classifier_underground_model*** . Model için gpu'da yapılacak cache'leme için path. 
+			- her açılışta modelin gpu'ya taşınmasını engelliyor. Zamanında her açılışta modelin aktarılması 1 dk sürüyordu.
+		- feature_extractor: her kanal için 32*48'lik window'lar çıkarıyor. 
 
-**Sistemde olmayan bir parametre eklendiğinde:
-	- öncelikle config.h'a ekle.
-	- sonrasında config_parser'da 
+	**Sistemde olmayan bir parametre eklendiğinde:
+		- öncelikle config.h'a ekle.
+		- sonrasında config_parser'da 
 
-DPUConfigFactory:
-	- CreateDefaultZoneParameters: fence ya da underground çalışılacak bölgelerin belirlenmesini sağlıyor.
-
+	DPUConfigFactory:
+		- CreateDefaultZoneParameters: fence ya da underground çalışılacak bölgelerin belirlenmesini sağlıyor.
+		- DPU_VERSION : commit'e göre elle git üzerinden güncellenmesi gerekiyor.
+			- version.h üzerinde versiyon bilgisi yer alıyor.
+		- DPU yazılımı 2 adet sinyal kullanıyor:
+			- TerminationSignalHandler: ctrl + c handle edilir.
+		- yazılımın çalışması için 3 temel şeye ihtiyaç var: 
+			- ilk önce config dosyalarını okuyor (dpu_main.cpp'de yer alıyor). Bunu yapan dpu_config_factory :
+				- default_config_folder_ = ".\\run_time_files\\config\\default"; :yazılımı ayağa kaldırmak için minimum ihtiyaç duyduğu parametreler.
+				- application_config_folder_="C:\\MIDAS\\config\\application";: sahaya göre değişen parametreler.
+				- user_config_folder_="C:\\MIDAS\\config\\user"; : kullanıcının sahada değiştirmiş olduğu ayarlar. örneğin: sensörlerin ip'leri, seri 	portları farklı olabilir. saha aynı olsa da bu ayarlar bu katmanda değiştirilir.
+				- web_server_root_folder_ = ".\\run_time_files\\html"; : 9980,9981 (9981 son kullanıcı için  detay içermeyen 2. arayüz) sorgulayıcı cihazların ve DPU yazılımının ayarlarını yapabildiğimiz, algoritma parametrelerini,raw dataların takibini yapabildiğimiz değiştirebildiğimiz bir DPU arayüz var. Bu arayüz'ün HTML dosyalrının bulunduğu path.
+			- 
+		
+	script.js:
+		- font_awesome: çok sayıda ücretsiz simge kullanımını sağlayan kütüphane.
+    
+	dpu_config_factory: 
+		- yazılım ilk olarak dpu_config_factory ile config dosyalarının path'lerini input vererek config dosyalarını okuyor.
+		- zone oluşturabiliyor. underground ve fence noktalarının belirlenmesini sağlıyor.
+        
+		- config_factory.h : 
+			- ExtractJSONMessageHeader:
+				- gelen mesaj'ın header'ına göre işlem yapıyor. 
+				- gelen json mesajlarını ayrıştırıyor:
+					- on_demand geldiğinde ona göre işlem yapıyor.
+					- update 'e tıklandığında bu işlemin update mi save mi olduğunu belirler.
+		
+		
+	dpu_config :
+		- config dosyalarındaki
+		- dpu_config_factory'de constructor parametlerei olan 3 config dosyasının içeriğindeki parametreler dpu_config.h 'de tutulan değişkenlere map'leniyor. 
+		- DPUOutputConfigurationParameters: 
+			- dpu_default_algoritma.cfg'de tutuluyor.
+			- algoritma ekibi alarm kayıtlarının çıkardığı power'ları dump'lıyor, dosyaya yazıyor.
+	- global sabitler global_constant namespace'inde tutuluyor.
+	
+	- input_priority: Midas 3 için ilk olarak hangi fiber'den data geleceğini gösterir.
+		
+	
 
 ===================================
-ders 3 (dpu_config):
+ders 3 (dpu_config default parametreler):
 dpu_config:
-	- RecorderMainParameters: rolling_raw ve on_demand için 
+	- RecorderMainParameters: 
+		- rolling_raw ve on_demand için 
+		- rolling record, ondemand  nerede tutulacağı ve diğer parametlerinin tutulduğu yer.
 	
-	- preproccessorParameters:
+	- PreproccessorParameters:
 		- number_of_samples_in_one_windows: 400 => 2 boyutlu matris. Algoritmaya 5150*400'lük veri geliyor.
-		- number_of_openmp_threads: işi rahatlatmak için thread kullanımı artırılabilir ama bellek kullanımı artar. 
-	
+		- number_of_openmp_threads: işi rahatlatmak için thread kullanımı artırılabilir ama bellek kullanımı artar. 6 görünüyor ama normalde 4 kullanılıyor.
+	- PowerNormalizationParameters çoğu sabit değerler. Parametreleri ile çok oynanmıyor.
 	- FileDataSourceParameters: 
 		- file_datasource_enable : 1 olursa dosyadan okur.
 		- file_data_source_loop: 1 olursa aynı data bittiği zaman tekrar tekrar oynatır.
 	- ClassificationParameters: 
-		-selected_mod: underground veya fence olabilir.
+		- presetler tutuluyor.
+		- selected_mod: underground veya fence olabilir.
 
 	- Logger_Parameters:
 		- rotation_size: 10485760 (10 GB'ye ulaştığı zaman eski kayıtlı dosyaları sil) 
