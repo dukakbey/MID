@@ -1,0 +1,10 @@
+- öncelikle cpp 14 ile derlenmeli.
+- apps altında yer alan boost klasörleri include directories 'e eklenmeli.
+- preprocessor altında eklenecekler:
+    _MBCS
+    _SCL_SECURE_NO_WARNINGS
+    _CRT_SECURE_NO_WARNINGS
+    _ENABLE_ATOMIC_ALIGNMENT_FIX
+    _WIN32_WINNT=0x0601
+- Configuration Properties > Linker > Input > Additional Dependencies kısmını güncelle
+- son olarak release mod'da çalış.
