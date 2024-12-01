@@ -277,18 +277,29 @@ interrogator_device_packet_structere.docx:
 	- 8 adet fragment 1 frame'e karşılık gelir. ve 8 adet fragment tamamlandığı zaman 5150'lik bir kanaldan veri gelmiş oluyor.
 	- 5150 kanalın (her kanal 2byte) her bir verisinin 8 adet küçük çank'lar halinde geldiğini düşünebiliriz. Biz bunları birleştiriyoruz.
 	- her çank'ta header ve payload var
-	- struct UDPPacketHeader //veri toplam 14 byte'lık : uint16_t short integer 2 byte / uint32_t : 4 byte
+	- struct UDPPacketHeader //veri toplam 14 byte'lık : uint16_t short integer 2 byte , uint32_t : 4 byte
 	{
 		uint16_t message_ID; // normalde unique artan bir değer ama alınan verilerde öyle görünmüyor.
-		uint32_t frame_count;// 8 fragment'te 1 artıyor.  
+		uint32_t frame_count;// her 8'li fragment (8 fragment 1 frame) için değeri 1 artıyor.  
 		uint16_t total_fragment_count;// toplam fragment sayısı midas için 8
 		uint16_t frame_fragment_no;// düzenli olarak artıyor. 1'den 8'e kadar artan değerlere sahip oluyor.
 		uint16_t info;//midas 2 için anlamlı değil sabit değer alıyor. midas 3 için önemli bir parametre: data'nın hangi fiber'den geldiğini gösteriyor. 0 ise 1.fiber, 1 ise 2.fiber.
 		uint16_t message_length;//raw data'nın paket boyutunu gösteriyor. header(14byte) + payload size
 	}PACKED;
-	- 8 fragemnt'te gelen raw data 5150 kanal'a karşılık gelmiyorsa o raw data'yı algoritmaya vermiyor.
+																				  
+	- 1.fragment toplam 1470 byte  = 14 byte header + 1456  byte raw data , 1456/2 -> 728 kanal raw data
+	- 2.fragment toplam 1470 byte  = 14 byte header + 1456  byte raw data , 1456/2 -> 728 kanal raw data
+	- 3.fragment toplam 1470 byte  = 14 byte header + 1456  byte raw data , 1456/2 -> 728 kanal raw data
+	- 4.fragment toplam 1470 byte  = 14 byte header + 1456  byte raw data , 1456/2 -> 728 kanal raw data
+	- 5.fragment toplam 1470 byte  = 14 byte header + 1456  byte raw data , 1456/2 -> 728 kanal raw data
+	- 6.fragment toplam 1470 byte  = 14 byte header + 1456  byte raw data , 1456/2 -> 728 kanal raw data
+	- 7.fragment toplam 1470 byte  = 14 byte header + 1456  byte raw data , 1456/2 -> 728 kanal raw data
+	- 8.fragment toplam 122 byte   = 14 byte header + 108 	byte raw data , 108/2  ->  54 kanal raw data
+	
+	
+	- 8 fragment'te gelen raw data 5150 kanal'a karşılık gelmiyorsa o raw data'yı algoritmaya vermiyor. Raw data kaydı yaparak akışa devam edilmiyor.
 	- frame'ler mesaj kuyruğuna veriliyor. Bu mesaj kuyruğu 400 frame'e (windows size) ulaştığında algoritmaya veriliyor.
-
+	- 8. yani Son fragment gariç her fragment'te message lenght 1470 byte. Bu da 728 kanal'ın raw data'sı.
 Yukarıda anlatılan mekanizmayı uygulayan sınıf DPU Pipeline:
 	- Önce raw data dosya'dan mı okunacak kontrolü yapılıyor. File_data_source_enable: 1 ise dosyadan okunur.
 	- File_data_source_enable : 0 ise UDPDataSource'a gider.
@@ -298,7 +309,10 @@ Yukarıda anlatılan mekanizmayı uygulayan sınıf DPU Pipeline:
 		- alarm buffer: alarm analizleri yapılacak kısım. 
 		- tcp_data_sink: TCP üzerinden waterfall datasının ve alarmların gönderilmesi için egerekli olan soket bağlantısının oluşturulmasını sağlayan sınıf.
 Pipeline:
-	bu paketler farklı thread'ler halinde birbirleriyle sürekli messageQ üzerinden haberleşiyor. Kuyruğa raw data'nın pointer'ları yazılıyor.İlk 3'ü ortak bir messageQ kullanılıyor. Bu 3 mesajın ortak kullanıdığı message Q preproccessor üzerinde yer alıyor: AllocateBuffers(). Kuyrukta 20*400*5150 2byte'lık veri saklanıyor.
+	- bu paketler farklı thread'ler halinde birbirleriyle sürekli messageQ üzerinden haberleşiyor. 
+	- Kuyruğa raw data'nın pointer'ları yazılıyor.
+	- İlk 3'ü ortak bir messageQ kullanılıyor. 
+	- Bu 3 mesajın ortak kullanıdığı message Q preproccessor üzerinde yer alıyor: AllocateBuffers(). Kuyrukta 20*400*5150 2byte'lık veri saklanıyor.
 	1) data_source: 
 		- udp_data_source:  sorgulayıcı cihazdan 4660 portundan gelen verinin alınmasını sağlıyor.
 		- file_data_source: sorgulayıcı varmış gibi dosyadan okuma yaparak işlem yapmamızı sağlar.
@@ -316,21 +330,47 @@ Pipeline:
 	   rolling_raw_data_recorder:
 		- boost_singleProducer, boost_singleConsumer mesaj kuyruğu sınıfları kullanılıyor. raw_data_mediator bu kuyruğa yazıyor.
 	3) preprocessor: kaydedilen data preproccessor'a yollanıyor. Bu sayede algoritma alarmlar, waterfall.. üretiyor.
-	4) alarm_buffer
+	4) alarm_buffer: alarmlar önce alarm analizi'ne tabi tutuluyor ve renklendirme seviyesi belirleniyor.
 	5) tcp_data_sink: tcp üzerinden datayı gönderiyor.
 
-UDPDataSource:
+udp_data_source:
 	- burdan raw data 400*5150 2byte olarak iletiliyor.
+	- Init fonksiyonunda port bilgisini okuyor.
+		- port bilgisini okuyor. 4660 portun'dan sorgulayıcı cihaz raw data'yı basıyor.
+		- max_window_size_in_bytes_ : number_of_samples_in_one_window_ * MAX_NUMBER_OF_CHANNELS_IN_ONE_SAMPLE * 2
+		- number_of_samples_in_one_window_= 400
+		- packet_buffer_ : cihaz'dan gelen raw data'nın tutulduğu yer. raw data'nın kendisini tutuyor.
+	- run Process'i çalıştırır ve process sürekli çalışan bir fonksiyon:
+		- StartReceive: sorgulayıcı cihaz'dan verinin sürekli alındığı yer.
+		- max_packet_size_in_bytes_: 65507 girilmiş ama 1470 byte geliyor.
+	- HandleReceive: gelen mesaj messageQ'ya kopyalanıyor.
+		- InitializeState: cihaz'dan gelen kanal sayısını hesaplıyor. 5150 kanal olup olmadığını test ediyor:
+			- 1.fragment toplam 1470 byte  = 14 byte header + 1456  byte raw data , 1456/2 -> 728 kanal raw data
+			- number_of_channels_in_frame_read_ : kanal sayısının tutulduğu değişken.
+			- kanal sayısı hesaplandıktan sonra resetparameters = 0 oluyor ve else kısmındaki işlemler yapılıyor.
+		- ComputeFrameOffsetHashTable:
+			- fragment'ler alınırken ardışık olup olmadığını hast tablosuna kontrol eden hata varsa düzelten bir fonksiyon.
+		- udp_packet_header: ???
+		- write_offset gelen 8 fragment 5150 kanallık  verilerin hangi offset'lere yazılacağı bilgisi.
+		- SEPERATE: bu durumda farklı bir hesaplama var çünkü hihaz datayı bir fiber 1'den bir fiber'2 den olacak şekilde karışık yolluyor:
+			- FragmentSzArr[i] fiber 1 ve fiber 2'den karışık gelen datanın byte offset'ini düzgün yazılmasını sağlıyor.
+	- WritePacketToWindowsBuffer: doğru offset'ler sağlandıktan sonra packet_buffer_'a yani 5150*400'lük veriyi tutan yere veriyi yazıyor.
+	- ConcealLostSamples: kurcalandı fakat mekanizması ve implemantasyonu çözülemedi. Kullanılmadığında zaman saçma hatalar meydana geliyor.
 ========================================
 ders 8: DPU'dan raw data nasıl geliyor kısmına odaklanıldı.:
 
-udp_data_source.cpp:
+- udp_data_source :
 	- 400 * 5150 'lik bufferlar ile data yollanıyor.
 	- ConcealLostSamples() : tam ne işe yaradığı bilinmiyor. Kullanılmadığında/yorum satırına alındığında uygulama garip bir tepki veriyor.
+	- last_intact_sample_buffer_ : eski 5150*400'lük datanın kopyasını tutuyor hast tablosundaki kaymalar durumunda datayı kıpyalıyor.
+- free_buffer_chunk_ (5150*400*2byte),free_buffer_queue_: 
+	- data_source, raw_data_mediator, preprocessor ortak bir messageQ kullanıyor. Bu messageQ preproccessor.cpp içerisinde yer alıyor.
+	- messageQ 20*400*5150*2byte'lık veri saklar.(20 window)
+- raw_data_mediator:
+	- Aracı bir sınıf asıl işi yapacak sınıflara raw_data yolluyor(rolling_raw_data_recorder,ondemand_raw_data_recorder). 
+	-  
 
-raw_data_mediator:
- - Aracı bir sınıf asıl işi yapacak sınıflara raw_data yolluyor(rolling_raw_data_recorder,ondemand_raw_data_recorder). 
- -    
+ 
 =============================================== 
 ders 9: rolling_raw_data kısmına odaklanıldı.:
 
