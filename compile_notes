@@ -7,3 +7,4 @@
     _ENABLE_ATOMIC_ALIGNMENT_FIX
     _WIN32_WINNT=0x0601
 - Configuration Properties > Linker > Input > Additional Dependencies kısmını güncelle
+- son olarak release mod'da çalış.
