@@ -59,7 +59,7 @@ Kütüphaneleri Ekleme:
 ders 2 (kütüphaneler,config files,script.js): 
 
 dpu_main.cpp:
-	- _setmaxstdio(2048) : 2 gb anlık olarak dosya açabiliyoruz. DPU özelinde 2gb üstüne çıkmaya çalıştığında işletim sistemi sınır getiriyor, açamıyoruz. Mesela Alarm triger kayıtlarında aynı anda 500 alar oldu. Waterfall ses kayıtlarında raw data oluşturuluyor. Aynı anda yapılmaya çalışıldığında işletim sistemi sınır koyuyor. Alarmlar oluşmayabilir default 1 GB'di bu ayar ile 2gb'ye çıkarıldı.
+	- _setmaxstdio(2048) : 2 gb anlık olarak dosya açabiliyoruz. DPU özelinde 2gb üstüne çıkmaya çalıştığında işletim sistemi sınır getiriyor, açamıyoruz. Mesela Alarm triger kayıtlarında aynı anda 500 alarm oldu. Waterfall ses kayıtlarında raw data oluşturuluyor. Aynı anda yapılmaya çalışıldığında işletim sistemi sınır koyuyor. Alarmlar oluşmayabilir default 1 GB'di bu ayar ile 2gb'ye çıkarıldı.
 	Visual Studio Properties settings:
     Build Event: 
         - Visual studio properties altında yer alan Build event kısmında Command Line adında bir ayarımız var. Burada her build işlemi gerçekleştiğinde çalışacak komut giriyoruz. Bu komut bize "version.h" oluşturuyor.
@@ -87,7 +87,7 @@ dpu_main.cpp:
 		- DPU yazılımı 2 adet sinyal kullanıyor:
 			- TerminationSignalHandler: ctrl + c handle edilir.
 		- yazılımın çalışması için 3 temel şeye ihtiyaç var: 
-			- ilk önce config dosyalarını okuyor (dpu_main.cpp'de yer alıyor). Bunu yapan dpu_config_factory :
+			- ilk önce config dosyalarını okuyor (dpu_main.cpp'de yer alıyor). Bunu yapan config_factory :
 				- default_config_folder_ = ".\\run_time_files\\config\\default"; :yazılımı ayağa kaldırmak için minimum ihtiyaç duyduğu parametreler.
 				- application_config_folder_="C:\\MIDAS\\config\\application";: sahaya göre değişen parametreler.
 				- user_config_folder_="C:\\MIDAS\\config\\user"; : kullanıcının sahada değiştirmiş olduğu ayarlar. örneğin: sensörlerin ip'leri, seri 	portları farklı olabilir. saha aynı olsa da bu ayarlar bu katmanda değiştirilir.
@@ -97,8 +97,8 @@ dpu_main.cpp:
 	script.js:
 		- font_awesome: çok sayıda ücretsiz simge kullanımını sağlayan kütüphane.
     
-	dpu_config_factory: 
-		- yazılım ilk olarak dpu_config_factory ile config dosyalarının path'lerini input vererek config dosyalarını okuyor.
+	config_factory: 
+		- yazılım ilk olarak config_factory ile config dosyalarının path'lerini input vererek config dosyalarını okuyor.
 		- zone oluşturabiliyor. underground ve fence noktalarının belirlenmesini sağlıyor.
         
 		- config_factory.h : 
@@ -284,7 +284,7 @@ interrogator_device_packet_structere.docx:
 		uint16_t total_fragment_count;// toplam fragment sayısı midas için 8
 		uint16_t frame_fragment_no;// düzenli olarak artıyor. 1'den 8'e kadar artan değerlere sahip oluyor.
 		uint16_t info;//midas 2 için anlamlı değil sabit değer alıyor. midas 3 için önemli bir parametre: data'nın hangi fiber'den geldiğini gösteriyor. 0 ise 1.fiber, 1 ise 2.fiber.
-		uint16_t message_length;//raw data'nın paket boyutunu gösteriyor. header(14byte) + payload size
+		uint16_t message_length;//(1470 byte)raw data'nın paket boyutunu gösteriyor. header(14byte) + payload size
 	}PACKED;
 																				  
 	- 1.fragment toplam 1470 byte  = 14 byte header + 1456  byte raw data , 1456/2 -> 728 kanal raw data
@@ -299,7 +299,7 @@ interrogator_device_packet_structere.docx:
 	
 	- 8 fragment'te gelen raw data 5150 kanal'a karşılık gelmiyorsa o raw data'yı algoritmaya vermiyor. Raw data kaydı yaparak akışa devam edilmiyor.
 	- frame'ler mesaj kuyruğuna veriliyor. Bu mesaj kuyruğu 400 frame'e (windows size) ulaştığında algoritmaya veriliyor.
-	- 8. yani Son fragment gariç her fragment'te message lenght 1470 byte. Bu da 728 kanal'ın raw data'sı.
+	- 8. yani Son fragment hariç her fragment'te message lenght 1470 byte. Bu da 728 kanal'ın raw data'sı.
 Yukarıda anlatılan mekanizmayı uygulayan sınıf DPU Pipeline:
 	- Önce raw data dosya'dan mı okunacak kontrolü yapılıyor. File_data_source_enable: 1 ise dosyadan okunur.
 	- File_data_source_enable : 0 ise UDPDataSource'a gider.
@@ -308,9 +308,13 @@ Yukarıda anlatılan mekanizmayı uygulayan sınıf DPU Pipeline:
 		- preprocessor : algoritmanın çalışacağı yer.
 		- alarm buffer: alarm analizleri yapılacak kısım. 
 		- tcp_data_sink: TCP üzerinden waterfall datasının ve alarmların gönderilmesi için egerekli olan soket bağlantısının oluşturulmasını sağlayan sınıf.
-Pipeline:
+Pipeline: 
+
+UDPDataSource -> RawDataMediator -> PreProcessor -> alarm_buffer -> TCPDataSink
+	- akış DPUPipeline sınıfı üzerinden başlıyor.
+		- Eğer FileDataSource enable ise dosyadan okuyor. Değilse UDPDataSource üzerinden raw data okunur.
 	- bu paketler farklı thread'ler halinde birbirleriyle sürekli messageQ üzerinden haberleşiyor. 
-	- Kuyruğa raw data'nın pointer'ları yazılıyor.
+	- Kuyruğa raw_data'nın pointer'ları yazılıyor.
 	- İlk 3'ü ortak bir messageQ kullanılıyor. 
 	- Bu 3 mesajın ortak kullanıdığı message Q preproccessor üzerinde yer alıyor: AllocateBuffers(). Kuyrukta 20*400*5150 2byte'lık veri saklanıyor.
 	1) data_source: 
@@ -340,6 +344,7 @@ udp_data_source:
 		- max_window_size_in_bytes_ : number_of_samples_in_one_window_ * MAX_NUMBER_OF_CHANNELS_IN_ONE_SAMPLE * 2
 		- number_of_samples_in_one_window_= 400
 		- packet_buffer_ : cihaz'dan gelen raw data'nın tutulduğu yer. raw data'nın kendisini tutuyor.
+	- Byte'lar little endian'a göre okunuyor.
 	- run Process'i çalıştırır ve process sürekli çalışan bir fonksiyon:
 		- StartReceive: sorgulayıcı cihaz'dan verinin sürekli alındığı yer.
 		- max_packet_size_in_bytes_: 65507 girilmiş ama 1470 byte geliyor.
@@ -480,7 +485,13 @@ ders 18 (alarm_analyzer):
 ============================
 ders 19 (alarm_analyzer, iu_communicator-MIDAS3_Komut_Mesaj_Parametre_2021 dokümanındaki komutlar anlatıldı):
 MIDAS3_Komut_Mesaj_Parametre_2021.10.01.xlsx dokümanı ? 
-
+SVGL17 Yazılım Tasarım Dokümanı_RevB_V2.docx  ??
+ 
+- iu_communicator: cihaz ile seri iletişimi sağlayan komut göndermemizi ve almamızı sağlayan sınıf.
+- Sorgulayıcı cihazdan raw_data alabilmek için bu listedeki komutları göndermek gerekiyor. (MIDAS3_Komut_Mesaj_Parametre_2021)
+	- setDataParameters() : 
+		- Cihaz içindeki veri akışı ile ilgili tüm parametreleri belirlemeye yarar.
+		- data hangi fiber'den gelecek.Single mı redundant mı çalışacak gibi ayarlar için kullanılır.
 
 
 ============================
@@ -492,6 +503,7 @@ SVGL17 Yazılım Tasarım Tanımları Dokümanı_RevB_V2  ??
 
 ============================
 ders 21 (iu_communicator):
+	- 
 	- 
 
 
