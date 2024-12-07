@@ -298,6 +298,7 @@ interrogator_device_packet_structere.docx:
 	
 	
 	- 8 fragment'te gelen raw data 5150 kanal'a karşılık gelmiyorsa o raw data'yı algoritmaya vermiyor. Raw data kaydı yaparak akışa devam edilmiyor.
+	- window_size = 400
 	- frame'ler mesaj kuyruğuna veriliyor. Bu mesaj kuyruğu 400 frame'e (windows size) ulaştığında algoritmaya veriliyor.
 	- 8. yani Son fragment hariç her fragment'te message lenght 1470 byte. Bu da 728 kanal'ın raw data'sı.
 Yukarıda anlatılan mekanizmayı uygulayan sınıf DPU Pipeline:
@@ -308,15 +309,7 @@ Yukarıda anlatılan mekanizmayı uygulayan sınıf DPU Pipeline:
 		- preprocessor : algoritmanın çalışacağı yer.
 		- alarm buffer: alarm analizleri yapılacak kısım. 
 		- tcp_data_sink: TCP üzerinden waterfall datasının ve alarmların gönderilmesi için egerekli olan soket bağlantısının oluşturulmasını sağlayan sınıf.
-Pipeline: 
-
-UDPDataSource -> RawDataMediator -> PreProcessor -> alarm_buffer -> TCPDataSink
-	- akış DPUPipeline sınıfı üzerinden başlıyor.
-		- Eğer FileDataSource enable ise dosyadan okuyor. Değilse UDPDataSource üzerinden raw data okunur.
-	- bu paketler farklı thread'ler halinde birbirleriyle sürekli messageQ üzerinden haberleşiyor. 
-	- Kuyruğa raw_data'nın pointer'ları yazılıyor.
-	- İlk 3'ü ortak bir messageQ kullanılıyor. 
-	- Bu 3 mesajın ortak kullanıdığı message Q preproccessor üzerinde yer alıyor: AllocateBuffers(). Kuyrukta 20*400*5150 2byte'lık veri saklanıyor.
+Pipeline:
 	1) data_source: 
 		- udp_data_source:  sorgulayıcı cihazdan 4660 portundan gelen verinin alınmasını sağlıyor.
 		- file_data_source: sorgulayıcı varmış gibi dosyadan okuma yaparak işlem yapmamızı sağlar.
@@ -347,7 +340,7 @@ udp_data_source:
 	- Byte'lar little endian'a göre okunuyor.
 	- run Process'i çalıştırır ve process sürekli çalışan bir fonksiyon:
 		- StartReceive: sorgulayıcı cihaz'dan verinin sürekli alındığı yer.
-		- max_packet_size_in_bytes_: 65507 girilmiş ama 1470 byte geliyor.
+		- max_packet_size_in_bytes_: 65507 garanti olsun diye girilmiş ama o kadar byte gelmiyor.ama 1470 byte geliyor.
 	- HandleReceive: gelen mesaj messageQ'ya kopyalanıyor.
 		- InitializeState: cihaz'dan gelen kanal sayısını hesaplıyor. 5150 kanal olup olmadığını test ediyor:
 			- 1.fragment toplam 1470 byte  = 14 byte header + 1456  byte raw data , 1456/2 -> 728 kanal raw data
@@ -359,11 +352,24 @@ udp_data_source:
 		- write_offset gelen 8 fragment 5150 kanallık  verilerin hangi offset'lere yazılacağı bilgisi.
 		- SEPERATE: bu durumda farklı bir hesaplama var çünkü hihaz datayı bir fiber 1'den bir fiber'2 den olacak şekilde karışık yolluyor:
 			- FragmentSzArr[i] fiber 1 ve fiber 2'den karışık gelen datanın byte offset'ini düzgün yazılmasını sağlıyor.
-	- WritePacketToWindowsBuffer: doğru offset'ler sağlandıktan sonra packet_buffer_'a yani 5150*400'lük veriyi tutan yere veriyi yazıyor.
-	- ConcealLostSamples: kurcalandı fakat mekanizması ve implemantasyonu çözülemedi. Kullanılmadığında zaman saçma hatalar meydana geliyor.
+	- WritePacketToWindowsBuffer: doğru offset'ler sağlandıktan sonra packet_buffer_'a yani 5150*400'lük veriyi yazıyor.
+	- ConcealLostSamples: 
+		- kurcalandı fakat mekanizması ve implemantasyonu çözülemedi. 
+		- Kullanılmadığında zaman saçma hatalar meydana geliyor. 
+		- Bu fonksiyon olmadığı zaman diskte olan bozulmalarda aynı veri sürekli geliyor ve waterfall'da yatayda çizgiler oluşuyor.
+	- 400 frame'den sonra bu if'e girer: if (end_cnt_diff > 0 || end_cnt_diff < INT_MIN)
+		- Data'yı diğer bloklara yollar.
+		- Data'nın kayıt işlemini sağlar.
 ========================================
 ders 8: DPU'dan raw data nasıl geliyor kısmına odaklanıldı.:
-
+UDPDataSource -> RawDataMediator -> PreProcessor -> alarm_buffer -> TCPDataSink
+	- akış DPUPipeline sınıfı üzerinden başlıyor.
+		- Eğer FileDataSource enable ise dosyadan okuyor. Değilse UDPDataSource üzerinden raw data okunur.
+	- bu paketler farklı thread'ler halinde birbirleriyle sürekli messageQ üzerinden haberleşiyor. 
+	- Kuyruğa raw_data'nın pointer'ları yazılıyor.
+	- İlk 3'ü ortak bir messageQ kullanılıyor. 
+	- Bu 3 mesajın ortak kullanıdığı messageQ preproccessor üzerinde yer alıyor: AllocateBuffers(). Kuyrukta 20*400*5150 2byte'lık veri saklanıyor.
+GetNextElement(): pipeline'da bir sonraki elemanı temsil eder.
 - udp_data_source :
 	- 400 * 5150 'lik bufferlar ile data yollanıyor.
 	- ConcealLostSamples() : tam ne işe yaradığı bilinmiyor. Kullanılmadığında/yorum satırına alındığında uygulama garip bir tepki veriyor.
@@ -372,15 +378,43 @@ ders 8: DPU'dan raw data nasıl geliyor kısmına odaklanıldı.:
 	- data_source, raw_data_mediator, preprocessor ortak bir messageQ kullanıyor. Bu messageQ preproccessor.cpp içerisinde yer alıyor.
 	- messageQ 20*400*5150*2byte'lık veri saklar.(20 window)
 - raw_data_mediator:
-	- Aracı bir sınıf asıl işi yapacak sınıflara raw_data yolluyor(rolling_raw_data_recorder,ondemand_raw_data_recorder). 
-	-  
-
- 
+	- D diskinde raw_data kaydı yapıyor.
+	- Bu Aracı bir sınıf asıl işi yapacak sınıflara raw_data yolluyor(rolling_raw_data_recorder,ondemand_raw_data_recorder). 
+	- şu kod arayüzde raw data çizdirebilmek için gerekli. Raw data kaydının yapıldığı yerler buaralar: 
+		if (GetDPUConfig()->iu_communicator_message_queues_->iu_communicator_message_queue_->write_available() >= (number_of_channels_in_one_sample_ * sizeof(int16_t))) 
+		{
+			GetDPUConfig()->iu_communicator_message_queues_->iu_communicator_message_queue_->push(full_buffer_chunk_.buffer_pointer, (number_of_channels_in_one_sample_ * sizeof(int16_t)));
+		}
+		GetNextElement()->full_buffer_queue_->push((char*)&full_buffer_chunk_, sizeof(BufferChunk)); 
+		
+		- ONDEMAND_RAW_DATA_RECORDER, ROLLING_RAW_DATA_RECORDER sınıflarına veriler gönderiliyor.
+- recorder:
+	- alarm bazlı kayıt, waterfall, ses verisi.. bunların hepsi recorder sınıfından türüyor.
+		- info_recorder sınıfında multi_inheritance var. Bunun nedeni bazı on_demand ve rolling_data sınıflarındaki info kayıtlarını oluşturmak için oluşturulan bir class. 
+	-raw_data_recorder:
+		- rolling_raw_data_recorder:  
+			- esas cihazdan gelen data'nın kayıt edildiği sınıf.
+			- kendi kuruğu var : record_message_queue_ = new RollingWaterfallDataMessageQueue(MESSAGE_QUEUE_SIZE_IN_BYTES);
+				- bu kuyruk: message_queue -> record_message_queue->rolling_record_message_queue->raw_data-> rolling_raw_data_message_queue.h içerisinde.
+			- number_of_channels_offset: 
+				- boş sinyalin hangi kanalda bittiği bilgisini tutar.
+				- belli kanallar boş sinyal yolluyor. O kanalların bittiği yer belirlenip bittiği yerden anlamlı olan sinyali algoritma koduna vermek.
+				- Anlamsız kodu kayıtta görmek ve algoritma kodlarına vermek istemiyorum.
+			- asıl dosyaya yazma işleminin olduğu yer:
+				- void RollingRawDataRecorder::WriteDataToFile(char* raw_data) {
+					if (record_file_window_cnt_ == RAW_DATA_ROLLING_RECORD_TIME_STAMP_INTERVAL) {
+				}
+			- sliced_raw_data_: boş sinyallere göre kaydırma işlemi yaparak boş sinyalleri temizlemiş oluyor.
+			- kayıt yaparken 2gb 'lik dosyaya 2 gb'den küçük veri yazılırsa boş kısmı 0'lar ile doldurulur.
+	DWORD bytes_written;
+	WriteFile(data_record_file_,write_data_, writing_packet_byte_size_,&bytes_written,nullptr);
+	record_file_window_cnt_ = 0;
+}
 =============================================== 
 ders 9: rolling_raw_data kısmına odaklanıldı.:
 
 ==========================================
-ders 10: onDemand_raw_data kısmına odaklanıldı.:
+ders 10: ondemand_raw_data_recorder kısmına odaklanıldı.:
 * udp_data_source'dan gelen data raw_data_mediator'a geliyor. Mediator de aldığı raw data'ları rolling_raw_data'ya ve onDemand_raw_data'ya yolluyor.
 * element_main_loop  data'nın yazılğı fonksiyon.
 !! fragmentasyon problemini çözen işlemi on_demand'a da eklenmesi öneriliyor.
@@ -389,7 +423,7 @@ ders 10: onDemand_raw_data kısmına odaklanıldı.:
 - windows_size_in_bytes: max_number_of_gui *400* 2 byte  bir iterasyonda kaydedilecek veri boyutu.
 
 ===============================================
-ders 11: onDemand_raw_data,file_datasource_enable kısmına odaklanıldı.:
+ders 11: ondemand_raw_data,file_datasource_enable kısmına odaklanıldı.:
 * Midas 2 cihazı hep 5150 kanal olarak ayarlanıyor. sahada 3000 kanal olsa bile 5150 olarak ayarlanır. frekans değeri değişmemesi için.
 
 writeDataToFile:
