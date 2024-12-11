@@ -1,11 +1,79 @@
 - öncelikle cpp 14 ile derlenmeli.
-- apps altında yer alan boost klasörleri include directories 'e eklenmeli (.h dosyalarını include etmek için).
-- preprocessor altında eklenecekler:
+
+- Configuration Properties > C/C++ > General >Additional Include Directories ( .h Kütüphaneleri dahil et.):
+        D:\Apps\Midas_Libs\opencv\build\include
+        D:\Apps\Midas_Libs\VC_Libs\openssl\include
+        D:\Apps\Midas_Libs\VC_Libs\opencv\build\include
+        D:\Apps\Midas_Libs\VC_Libs\R410-developer
+        D:\Apps\Midas_Libs\VC_Libs\GDK\nvml\include
+        C:\dpu_clone_02.12.2024\dpu\DPU\
+        D:\Apps\Midas_Libs\VC_Libs\tensorflow-r1.2
+        D:\Apps\Midas_Libs\VC_Libs\tensorflow-r1.2\tensorflow\contrib\cmake\build\
+        D:\Apps\Midas_Libs\VC_Libs\tensorflow-r1.2\external\eigen_archive
+        D:\Apps\Midas_Libs\VC_Libs\tensorflow-r1.2\third_party\eigen3
+        D:\Apps\Midas_Libs\VC_Libs\boost_1_61_0
+        D:\Apps\Midas_Libs\VC_Libs\poco-1.10.1-all\Net\include
+        D:\Apps\Midas_Libs\VC_Libs\poco-1.10.1-all\Util\include
+        D:\Apps\Midas_Libs\VC_Libs\poco-1.10.1-all\JSON\include
+        D:\Apps\Midas_Libs\VC_Libs\poco-1.10.1-all\CppUnit\include
+        D:\Apps\Midas_Libs\VC_Libs\poco-1.10.1-all\XML\include
+        D:\Apps\Midas_Libs\VC_Libs\poco-1.10.1-all\Data\include
+        D:\Apps\Midas_Libs\VC_Libs\poco-1.10.1-all\Zip\include
+        D:\Apps\Midas_Libs\VC_Libs\poco-1.10.1-all\Foundation\include
+        D:\Apps\Midas_Libs\VC_Libs\poco-1.10.1-all\Data\PostgreSQL\include
+        D:\Apps\Midas_Libs\VC_Libs\onnxruntime-win-x64-gpu-1.10.0\include
+        C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.4\include
+
+- Configuration Properties > C/C++ > Preprocessor altında eklenecekler:
     _MBCS
     _SCL_SECURE_NO_WARNINGS
     _CRT_SECURE_NO_WARNINGS
     _ENABLE_ATOMIC_ALIGNMENT_FIX
     _WIN32_WINNT=0x0601
+
 - Configuration Properties > Linker > general > Additional Library Directories kısmını güncelle
-- Configuration Properties > Linker > Input > Additional Dependencies kısmını (lib dosyalarını include etmek için) güncelle
+        D:\Apps\Midas_Libs\opencv\build\x64\vc15\lib
+        D:\Apps\Midas_Libs\VC_Libs\openssl\lib
+        D:\Apps\Midas_Libs\VC_Libs\opencv\build\x64\vc15\lib
+        D:\Apps\Midas_Libs\VC_Libs\R410-developer\amd64
+        D:\Apps\Midas_Libs\VC_Libs\GDK\nvml\lib
+        D:\Apps\Midas_Libs\VC_Libs\tensorflow-r1.2
+        D:\Apps\Midas_Libs\VC_Libs\fftw-3.3.5-dll64
+        D:\Apps\Midas_Libs\VC_Libs\poco-1.10.1-all\lib64
+        D:\Apps\Midas_Libs\VC_Libs\boost_1_61_0\stage\lib
+        C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.4\lib\x64
+        D:\Apps\Midas_Libs\VC_Libs\onnxruntime-win-x64-gpu-1.10.0\lib
+        %(AdditionalLibraryDirectories)
+
+
+- Configuration Properties > Linker > Input > Additional Dependencies kısmını (lib dosyalarını include etmek için) güncelle:
+        advapi32.lib
+        shell32.lib
+        ole32.lib
+        oleaut32.lib
+        uuid.lib
+        odbc32.lib
+        odbccp32.lib
+        libfftw3f-3.lib
+        libfftw3-3.lib
+        CppUnit.lib
+        PocoJSON.lib
+        PocoNet.lib
+        PocoUtil.lib
+        PocoXML.lib
+        PocoData.lib
+        PocoDataPostgreSQL.lib
+        PocoFoundation.lib
+        PocoZip.lib
+        libpq.lib
+        nvapi64.lib
+        nvml.lib
+        Version.lib
+        onnxruntime.lib
+        onnxruntime_providers_cuda.lib
+        onnxruntime_providers_shared.lib
+        onnxruntime_providers_tensorrt.lib
+        cudart.lib
+        cublas.lib
+
 - son olarak release mod'da çalış.
