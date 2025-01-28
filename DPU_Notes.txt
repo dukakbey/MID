@@ -1,6 +1,6 @@
 DPU
 ===========
-ders 1:
+ders 1 :
 
 DPU kaynak kod gitlab : http://192.168.21.86/
 Diğer kaynak kodlar: http://192.168.21.102

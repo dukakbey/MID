@@ -1,0 +1,9 @@
+COM-API
+===========
+Ders1:
+Genel:
+	- Touch, MİDAS komuta kontrol yazılımlarıdır. Touch'ın veya MİRSAD'ın Midas sensörlerinden/yazılımlarından waterfall, ses,alarm verilerini alabilmesini sağlayan yazılım comapi'dir.
+	- Kanal kalibrasyon verilerinin ayarlanması comApi üzerinden olur.
+	- C# ile geliştirilmiş olan ve DLL ihtiyacı duyan komuta kontrol yazılımlarında comapi jar dosyasını dll'e çevirmek mümkündür. IKVM.openJDK yazılımı ile yapılır.
+	
+-
