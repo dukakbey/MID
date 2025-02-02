@@ -1,0 +1,53 @@
+MSM
+===========
+Ders1:
+	genel:
+		- MSM uygulaması comapi kullanıyor:
+			- comApi jar'ı üretildikten sonra bu jar'ı kütüphane olarak kullanabilmek için eclips'te "Properties -> Java Build Path -> add Externall Jars " seçilerek ekleniyor.
+		- Comapi normalde java 1.8 ile hazırlanıyor fakat mirsad'a 1.7 ile vermemiz gerekiyor. Projeye göre jar üretmemiz gerekiyor.
+		- DPU'dan alınan alarmları filtrelemeyi sağlar.
+		- Touch Dashboard'da sensör üzerinde yer alan '...'=> Setting Management => Configuration bastığımızda sensör'ün  msm_user_settings.cfg üzerindeki ayarları görebilir ve değiştirebiliriz.
+		- localhost:3000/management ile sensöre restart atabiliyoruz.
+	- com.aselsan.msm.tcp:
+		- DPU'dan gelen tüm ses,alarm,şelale,cit verilerini tcp üzerinden alır.
+		- 
+		- 
+		
+	- msm_default_settings.cfg:
+		- app.touchAnalyzeURL=http://127.0.0.1:3000/analyze/   => Touch adresi
+		- app.caption=MIDAS_335 => Harita üzerinde yazılacak sensör ismi
+		- app.dpuWebPageURL=http://127.0.0.1:9980 => dpu_web
+		- app.filter.controlActive=false => bölge tanımını kapatıp açmaya yarıyor. Alarmlar her türlü üretiliyor ama MSM bunun comapi'ye iletilmesini bu kontrol sayesinde sağlıyor.
+		- app.filter.controlEarthquake=false => deprem için filtreleme yapmaz.
+		- app.statusMessageSendPeriodInMilliseconds=5000 => CIT mesajının frekansı
+		- app.midasComServerIpPorts=127.0.0.1:9091  => kafka'nın ip ve portu
+		- app.dpuPort=19193 => dpu bu porttan waterfall, alarm, ses ve cit mesajı gönderiyor. Bu port değişirse dpu'dan data alamayız. Burdan aldığı bu data'yı kafkaya basıyor.
+		- app.location.latitude=39.965714 
+		  app.location.longitude=32.765981
+		  app.location.altitude=1200  => bu 3'ü sensör'ün enlem ve boylam bilgileri.
+		  
+		- Touch üzerinde versiyon bilgilerini basabilmek için exe'lerin path'leri veriliyor:
+			#app info part
+			app.info.msmFullPath=C:\\MIDAS\\MSM\\MSM.exe
+			app.info.dbmFullPath=C:\\MIDAS\\DBM\\DBM.exe
+			app.info.armFullPath=C:\\MIDAS\\ARS\\ARS.exe
+			app.info.dpuFullPath=C:\\MIDAS\\DPU\\DPU.exe
+			
+		- Config'lerin versiyon bilgileri alınıyor ama Touch üzerinde basılmamış henüz:
+			#app version part
+			app.msmApplicationFilePath=C:\\MIDAS\\config\\application\\msm_application_settings.diff
+			app.dbmApplicationFilePath=C:\\MIDAS\\config\\application\\dbm_application_settings.diff
+			app.armApplicationFilePath=C:\\MIDAS\\config\\application\\ars_application_settings.diff
+			app.dpuConfigVersionFilePath=C:\\MIDAS\\config\\application\\dpu_application_main.diff
+			
+		- 200 ms'de bir waterfall mesajı geliyor bu True olursa şişme olur:
+			app.waterfall.showMessageLog=false
+========================		
+Ders3:
+	- 
+========================		
+Ders3:
+	
+========================		
+Ders4:
+	

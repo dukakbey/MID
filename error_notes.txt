@@ -1,0 +1,1 @@
+- git ile 102'den clone oluştururken hata alırsan git bash ile şu komutu gir : git config --global --add safe.directory '\\192.168.21.102\git_repo\Midas\MidasTouch'

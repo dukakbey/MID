@@ -1,0 +1,9 @@
+Touch Server
+===========
+Ders1:
+	- veri tabanı yer almıyor. sensorList.json'a veriler yazıyor.
+		
+========================		
+Touch Client
+ders 6 : 
+	- web arayüzü anlatıldı.
