@@ -1,6 +1,6 @@
 MSM
 ===========
-Ders1:
+Ders 1:
 	genel:
 		- MSM uygulaması comapi kullanıyor:
 			- comApi jar'ı üretildikten sonra bu jar'ı kütüphane olarak kullanabilmek için eclips'te "Properties -> Java Build Path -> add Externall Jars " seçilerek ekleniyor.
@@ -40,14 +40,64 @@ Ders1:
 			app.armApplicationFilePath=C:\\MIDAS\\config\\application\\ars_application_settings.diff
 			app.dpuConfigVersionFilePath=C:\\MIDAS\\config\\application\\dpu_application_main.diff
 			
-		- 200 ms'de bir waterfall mesajı geliyor bu True olursa şişme olur:
+		- 200 ms'de bir waterfall mesajı geliyor bu True olursa msm akan mesajına waterfall da eklenir ve şişme olur:
 			app.waterfall.showMessageLog=false
 ========================		
-Ders3:
-	- 
-========================		
-Ders3:
+Ders 2:
+	Genel
+		- Touch açıldığında CUCommunicator aracılığı ile bir request geliyor, msmCommunicator'un messageListener'ında tanımlı olan descriptionRequestMessageReceived fonksiyonu bunu yakalayarak "Descripton Response Message" response dönüyor.	
+		
+	- MSMAppStarter:
 	
+	- MSMManager:
+		- MsmCommunicator: 
+			- comapi kütüphanesi kullanılarak kütüphanede yer alan MsmCommunicator sınıfından nesne yaratılarak Kafka ile iletişim kurulur.
+			- input olarak 2 parametre alır:
+				1) kafka "ip:port" bilgisi (localhost:9091)
+				2) sensör id
+			- MU,CU Communicator'da yer alan şelale verisi,alarm,ses verisi al fonksiyonları burda yer almaz. Alarm basan yer burası.	
+			- msmCommunicator'a iletişim için message listener eklenir:
+				msmCommunicator.addMessageListener(new MSMMessageListener() 
+			- Touch açıldığında CUCommunicator aracılığı ile bir request geliyor, msmCommunicator'un messageListener'ı bunu yakalayarak "Descripton Response Message" response dönüyor.
+			- response'lar response_to_sensor topic'ine yazılır.
+			
+		- DPUTcpCommunicator : DPU ile tcp iletişimi kurarak alarm, şelale,cit verilerini almak için için kullanılır.
+		- mapDayFlag:
+			- bölge tanımı girildiğinde repetitive olan modunda (örn: her hafta salı ve çarşamba kazı aktivitesi açık olsun) arayüzdeki günleri map'lemek için kullanılır.
+		
+		- EXE'lerin versiyon bilgilerini basar:
+			msmAppVersion = EXEFileInfo.getVersionInfo(ConfigurationManager.getInstance().MSM_APP_INFO_FULLPATH);
+			dbmAppVersion = EXEFileInfo.getVersionInfo(ConfigurationManager.getInstance().DBM_APP_INFO_FULLPATH);
+			armAppVersion = EXEFileInfo.getVersionInfo(ConfigurationManager.getInstance().ARM_APP_INFO_FULLPATH);
+			dpuAppVersion = EXEFileInfo.getVersionInfo(ConfigurationManager.getInstance().DPU_APP_INFO_FULLPATH);
+		
+		- Genelde MSM'ye komutlar mirsad veya touch üzerinden geliyor.
+		- DBM ,ARS'den CİT mesajları MSM'ye geliyor.
+		- Touch açıldığı zaman (localhost:3000'e basıldığı zaman) bir "CITRequestMessage" request_to_sensor topic'ine yazılıyor ve MSM'ye (citRequestMessageReceived fonksiyonu) geliyor. Bu sayede DPU,DBM,ARS'den gelen CIT mesajları merge edilip basılıyor, Touch almaya başlıyor. "CITRequestMessage" mesajı 1 kez yollanıyor.
+		- ucitMessageReceived: ARS , DBM'den gelen CIT'ler.
+		- audioRequestMessageReceived:
+			- CUCommunicator'dan geliyor. Kanal üzerinde sağ tıklayıp kanalı dinle dediğimizde gelen request.
+			
+		- Touch üzerinde max kanal sayısını burdan alıyor : descriptionMessage.setMaxChannelCount(maxChannelSize);	maxChannelSize ise DPU'dan gelir.
+		
 ========================		
-Ders4:
+Ders 3:
+	Genel:
+		- Touch üzerinden gelen istek Kafkadan MSM'ye geliyor. MSM'De istek fonksiyonlarına düşüyor.
+		- Örnek: Touch arayüzünden play audio dediğimiz zaman CUCommunicator üzerinden Kafkaya ordan da MSM'ye audioRequestMessageReceived'e düşüyor. MSM'Den DPU'ya ise websocket ile iletiliyor:
+			- websocketManager.sendMessage(arg0); fonksiyonu dpu'ya iletir.
+			- DPU comapi kullanmadığı için sendMessage içinde dpu'nun anlayacağı formata dönüştürülüyor.
+			- Bölge tanımları DPU'ya gelmiyor. MSM üzerinde hallediliyor. Bölge tanımlarının MSM'den DPU'ya kaydırılması isteği vardı ama yapılmadı.
+			
+		- spectrogram kullanılmıyor.
+	- MSMManager:
+		- CIT Mesajlarının gönderilme periyodu: STATUS_MESSAGE_SEND_PERIOD_IN_MILLISECONDS
+		- regionThresholdMessage: şelaledeki kırmızılıkları maviye çevirebilmeyi sağlıyor. Artık kullanılmıyor. Bu yetenek kaldırılmış.
+		- commandMessageReceived: sensörleri veya ilgili bilgisayarlardaki yazılımları kapatıp açmayı sağlayan fonksiyon.
+		
+		18:27'de kaldık
+		 
+		
+========================		
+Ders 4:
 	

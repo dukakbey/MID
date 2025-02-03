@@ -5,12 +5,14 @@ Ders1:
 		- Sensör üzerinde değişiklik yapmıyor sadece data alıyor.
 	- CU Communicator : Aselsan yazılımlarında kullanılıyor: MİRSAD,Touch .. 
 		- MU Communicator'a göre artısı sensör üzerinde kontroller,ayarlar (bölge tanımı, kalibrasyon) yapılabiliyor. 
-	
+		- şelale verisi alır.
 	- CUMessageListener: arayüzden gelen mesajları dinliyor.
 	- subscribeWaterfallData: 
 		- sensör id parametresi girilerek bağlanılır ve waterfall data'sı alınır.
 		- touch üzerinde sensör id'sini çift tıklandığında ulaşılır.
-		
+	- MSMCommunicator	
+		- MU,CU Communicator'da yer alan şelale verisi,alarm,ses verisi al fonksiyonları burda yer almaz. Alarm basan yer burası.
+		- 
 ========================		
 Ders2:
 	- simülatör anlatılıyor 
