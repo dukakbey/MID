@@ -1,5 +1,5 @@
 MSM
-===========
+==========================
 Ders 1:
 	genel:
 		- MSM uygulaması comapi kullanıyor:
@@ -94,10 +94,16 @@ Ders 3:
 		- CIT Mesajlarının gönderilme periyodu: STATUS_MESSAGE_SEND_PERIOD_IN_MILLISECONDS
 		- regionThresholdMessage: şelaledeki kırmızılıkları maviye çevirebilmeyi sağlıyor. Artık kullanılmıyor. Bu yetenek kaldırılmış.
 		- commandMessageReceived: sensörleri veya ilgili bilgisayarlardaki yazılımları kapatıp açmayı sağlayan fonksiyon.
+		- configurationRequestMessageReceived: Touch ilk açıldığında request yolluyor. MSM de buna comApi aracılığı ile response dönüyor. 
+		- setConfigurationMessageReceived: Touch'da sağ tıkla => Setting Management => Configuration'da çıkan sensör bilgileri parametrelerini değiştirmeye yarar
+		- regionSettingsUpdatedMessageReceived: Touch üzerinde mesela MİRSAD üzerinde değişiklik yaptım 0-1000 arasına makinalı kazı ekledim. DBM,MSM'ye iletilmesi gerek.
 		
-		18:27'de kaldık
-		 
-		
+		- msmCommunicator.run(): bu run fonksiyonu tüm communicator'larda var.
+		- dpuTcpCommunicator: DPU ile MSM arasında tcp iletişimi sağlamak. DPU'dan gelen tüm ses,alarm,şelale,cit verileri MSM tarafından tcp üzerinden alınır.
 ========================		
 Ders 4:
-	
+	Genel:
+		- TCP üzerinden DPU'dan alarm alınır MSM'de önce kendi class'ına atılır. Sonrasında comApi'nin class'ı ile kafkaya uygun yapıya dönüştürülür.
+		- OPCODE_DATA = WATERFALL demek.
+		- MidasDataMesaage mdm = new MidasDataMesaage(this): bu waterfall mesajını tutar.
+		- uCit'ler tüm cit'leri kapsar. Cit'ler ise sadece DPU'dan gelen CİT'lerdir.
