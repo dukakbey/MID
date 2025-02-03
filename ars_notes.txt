@@ -1,0 +1,20 @@
+ARS
+===========
+Ders1:
+	- Geçmişte olan bir alarmı veya waterfall'u kullanıcı dinlemek/görmek istediğinde ARS devreye giriyor.
+	- Touch üzerinden (cuCommunicator üzerinden) akustik kayıt isteği gönderdiğimizde bu istek kafka üzerinden ARS'ye geliyor. ARS de bize o alarm için geçmişte oluşmuş akustik kayıtları buluyor.
+	- Akustik kayıtlar D Diski => MIDAS_RECORDS => ALARM_TRIGGERED_RECORDS => AUDIO/WATERDALL path'inde yer alır. Burda yer alan Raw ile ilgilenmiyoruz, boyutu çok büyük.
+		- Alarmın başlangıçından bitişine kadar bu path üzerinde dosya oluşturuluyor.
+		- Bir aktivite 15 dk'dan büyük ise 15 dk'lik parçalara bölünüyor.
+		- !!!! aktivite 4 adet 15 dk'lik veriden oluşuyorsa ARS sadece ilk 15 dk'sini getirir. MIRSAD 'da yüksek boyutlu dosyların iletiminde yaşanan çökmelerden kaynaklı bu karar alındı.
+		
+	- sorgulama çeşitleri:
+		- alarm bazlı sorgulama
+		- Kanal-Zaman aralığı bazlı sorgulama
+	- WebSocket'ten touch server'a istek geliyor...
+	- İstek kafka üzerinden ARS'ye geliyor fakat bu isteğe cevap TFTP server üzerinden veriliyor.  
+		- TFTP Server hazır bir yazılım.
+		- D => MIDAS_RECORDS => FTP klasörüne istek atılan id'li kayıt kopyalanır burdan okunur. 300 sn Sonrasında ARS tarafından silinir.
+========================		
+Ders2:
+	- D => MIDAS_RECORDS => FTP  klasörünü kurulum yazılımı yaratıyor. Eğer bu klasör silinirse yazılım hata verir.
