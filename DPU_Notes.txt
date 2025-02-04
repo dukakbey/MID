@@ -3,7 +3,7 @@ DPU
 ders 1 :
 
 DPU kaynak kod gitlab : http://192.168.21.86/
-Diğer kaynak kodlar: http://192.168.21.102
+Diğer kaynak kodlar: http://192.168.21.102/
 
 throubleShouting:
     - xx.lib does not exist derse manuel olarak linker -> input ayarına ilgili lib dosyasını eklersin.
@@ -277,13 +277,13 @@ interrogator_device_packet_structere.docx:
 	- 8 adet fragment 1 frame'e karşılık gelir. ve 8 adet fragment tamamlandığı zaman 5150'lik bir kanaldan veri gelmiş oluyor.
 	- 5150 kanalın (her kanal 2byte) her bir verisinin 8 adet küçük çank'lar halinde geldiğini düşünebiliriz. Biz bunları birleştiriyoruz.
 	- her çank'ta header ve payload var
-	- struct UDPPacketHeader //veri toplam 14 byte'lık : uint16_t short integer 2 byte , uint32_t : 4 byte
+	- struct UDPPacketHeader //veri toplam 14 byte'lık (uint16_t short integer 2 byte , uint32_t : 4 byte): 
 	{
 		uint16_t message_ID; // normalde unique artan bir değer ama alınan verilerde öyle görünmüyor.
 		uint32_t frame_count;// her 8'li fragment (8 fragment 1 frame) için değeri 1 artıyor.  
 		uint16_t total_fragment_count;// toplam fragment sayısı midas için 8
 		uint16_t frame_fragment_no;// düzenli olarak artıyor. 1'den 8'e kadar artan değerlere sahip oluyor.
-		uint16_t info;//midas 2 için anlamlı değil sabit değer alıyor. midas 3 için önemli bir parametre: data'nın hangi fiber'den geldiğini gösteriyor. 0 ise 1.fiber, 1 ise 2.fiber.
+		uint16_t info;//CIT verileri için. midas 2 için anlamlı değil sabit değer alıyor. midas 3 için önemli bir parametre: data'nın hangi fiber'den geldiğini gösteriyor. 0 ise 1.fiber, 1 ise 2.fiber.
 		uint16_t message_length;//(1470 byte)raw data'nın paket boyutunu gösteriyor. header(14byte) + payload size
 	}PACKED;
 																				  
@@ -311,7 +311,7 @@ Yukarıda anlatılan mekanizmayı uygulayan sınıf DPU Pipeline:
 		- tcp_data_sink: TCP üzerinden waterfall datasının ve alarmların gönderilmesi için egerekli olan soket bağlantısının oluşturulmasını sağlayan sınıf.
 Pipeline:
 	1) data_source: 
-		- udp_data_source:  sorgulayıcı cihazdan 4660 portundan gelen verinin alınmasını sağlıyor.
+		- udp_data_source: sorgulayıcı cihazdan 4660 portundan gelen verinin alınmasını sağlıyor.
 		- file_data_source: sorgulayıcı varmış gibi dosyadan okuma yaparak işlem yapmamızı sağlar.
 	2) raw_data_mediator: 
 		- Amacı raw data kaydı yapmak.  
@@ -369,11 +369,11 @@ UDPDataSource -> RawDataMediator -> PreProcessor -> alarm_buffer -> TCPDataSink
 	- Kuyruğa raw_data'nın pointer'ları yazılıyor.
 	- İlk 3'ü ortak bir messageQ kullanılıyor. 
 	- Bu 3 mesajın ortak kullanıdığı messageQ preproccessor üzerinde yer alıyor: AllocateBuffers(). Kuyrukta 20*400*5150 2byte'lık veri saklanıyor.
-GetNextElement(): pipeline'da bir sonraki elemanı temsil eder.
+- GetNextElement(): pipeline'da bir sonraki elemanı temsil eder.
 - udp_data_source :
 	- 400 * 5150 'lik bufferlar ile data yollanıyor.
 	- ConcealLostSamples() : tam ne işe yaradığı bilinmiyor. Kullanılmadığında/yorum satırına alındığında uygulama garip bir tepki veriyor.
-	- last_intact_sample_buffer_ : eski 5150*400'lük datanın kopyasını tutuyor hast tablosundaki kaymalar durumunda datayı kıpyalıyor.
+	- last_intact_sample_buffer_ : eski 5150*400'lük datanın kopyasını tutuyor hash tablosundaki kaymalar durumunda datayı kopyalıyor.
 - free_buffer_chunk_ (5150*400*2byte),free_buffer_queue_: 
 	- data_source, raw_data_mediator, preprocessor ortak bir messageQ kullanıyor. Bu messageQ preproccessor.cpp içerisinde yer alıyor.
 	- messageQ 20*400*5150*2byte'lık veri saklar.(20 window)
