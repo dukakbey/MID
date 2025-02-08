@@ -250,14 +250,14 @@ fiber_number:
 	- 3 : fiber-1 ve fiber-2'den data gelir.
 
 underground activity_types:	
-	- human
-	- vehicle
-	- digging
-	- excavator
-	
-fence activity_types:
-	- climb 
-	- cut
+	- "digging"
+	- "human"
+	- "vehicle"
+	- "excavator"
+	- "noise"
+	- "climb"
+	- "cut"
+	- "rockfall"
 
 WebSocketRequestResponder: DPUServer içerisinde bir sınıf. DPU localhost:99 web arayüzü üzerinden gelen istekler DPUServer'a geliyor.	
 DPUServer: 
@@ -333,7 +333,7 @@ Pipeline:
 udp_data_source:
 	- burdan raw data 400*5150 2byte olarak iletiliyor.
 	- Init fonksiyonunda port bilgisini okuyor.
-		- port bilgisini okuyor. 4660 portun'dan sorgulayıcı cihaz raw data'yı basıyor.
+		- port bilgisini okuyor. 4660 port'undan sorgulayıcı cihaz raw data'yı basıyor.
 		- max_window_size_in_bytes_ : number_of_samples_in_one_window_ * MAX_NUMBER_OF_CHANNELS_IN_ONE_SAMPLE * 2
 		- number_of_samples_in_one_window_= 400
 		- packet_buffer_ : cihaz'dan gelen raw data'nın tutulduğu yer. raw data'nın kendisini tutuyor.

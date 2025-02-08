@@ -1,9 +1,42 @@
 Touch Server
-===========
+====================================================================
 Ders1:
+Arayüz:
+	- F2 Touch'ın settings ekranıdır.
 	- veri tabanı yer almıyor. sensorList.json'a veriler yazıyor.
+		- Touch backend açılışta bunu okuyor.
+	- harita için leaflet.js kütüphanesi kullanılıyor.
+	- Alarms kısmında son 24 saatlik veri var.
+	- Geçmişteki alarmı çekmek için ARS'ye sorgu yollayacaktı.
+	- ikonlar için "font awesome" adlı kütüphane kullanılıyor.
+	- REGIONs:
+		- DPU'nun ürettiği alarmların belirtilen zaman veya belirtilen kanal aralığında kapatılıp açılmasını sağlıyor. DPU alarm üretmeye devam ediyor ama DPU'dan gelen alarmların MSM üzerinden gelmesi engelleniyor.
+		- Repetitive: örneğin 2 haftalık alarm bölgesi belirlenip istenilen aktiviteler ekleniyor.
+	- QUERY:
+		- Belirtilen zaman aralığında 
+	- CALIBRATION:
+		- harita üzerinde girilen kalibrasyonları gösteriyor.  
+		- kalibrasyonların amacı alarm oluştuğu zaman her kanalın enlem boylam bilgisine göre oluşan alarmı harita üzerinde bir koordinatta gösterebilmek. Bu sayede alarmın hangi coğrafik noktada olduğunu anlıyoruz.
+	-ANALYZE:
+		- bu ekranda 100 kanal sınırı var. Eski tasarımda kullanılan react kütüphanesinin getirdiği sınırlarmış. Umut kütüphaneyi güncelleyerek bunu düzeltmiş:
+			- f2 -> Analyze Maximum Channel Range: 1000 yapabilirsin.
+			
+	- localhost:3000/management
+		- Çoklu sensör olsaydı bu sensörler üzerinde ayar yapabileceğimiz arayüz budur.
+		- bağlı oldukları bilgisayarları veya çalışan servisleri aç kapa yapabiliyoruz.
 		
-========================		
+	-!! Touch'un veritabanı yok eklenen sensörleri sensorList.json üzerine yazıyor. Bunun veritabanına eklenmesi iyi olacaktır.
+		- remoteDumpAddress "\\\127.0.0.1\\midas_db_backups" : postgre midasDB 'nin nereye yedekleneciğinin adresi. 
+	- settings.properties:
+		- serverIpPortPairs=localhost:9091: kafka'ya hangi ip ve port üzerinden bağlanacağı yer alıyor. lmb altında yer alan server.config'de yer alan kafka ip'si ile aynı olmalı.
+		- messageQueueHandlerThreadCount=10: max thread sayısı da buraya giriliyor: Touch üzerinde multiple moda geçilir ve tüm sensörlerden veri,waterfall alınırsa bunun compansate edilmesi adına bu sınır artırılmalı.
+		- storeChannelInformationInFile=false : true yapılırsa sensorList.json'a her sensör için tüm coğrafi kanal kalibrasyonları yazılır. Çok büyük boyuttta bir json oluşur.
+			- Şuan veri tabanından alıyor. 
+			- sensorList.json biraz yedekleme dosyası gibi.
+			
+	
+	!!! Her yeni sayfa türetildiğinde yeni websocket açılıyor. 
+=================================================================		
 Touch Client
 ders 6 : 
 	- web arayüzü anlatıldı.

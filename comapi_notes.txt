@@ -12,7 +12,8 @@ Ders1:
 		- touch üzerinde sensör id'sini çift tıklandığında ulaşılır.
 	- MSMCommunicator	
 		- MU,CU Communicator'da yer alan şelale verisi,alarm,ses verisi al fonksiyonları burda yer almaz. Alarm basan yer burası.
-		- 
+		
+	- Touch arayüzünden aktivite üzerinde show signal dediğimizde ARS aracılığı ile TFTP'de dosya hazırlandı.ARS bu logu bastı.
 ========================		
 Ders2:
 	- simülatör anlatılıyor 
