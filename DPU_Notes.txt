@@ -8,8 +8,6 @@ Diğer kaynak kodlar: http://192.168.21.102/
 throubleShouting:
     - xx.lib does not exist derse manuel olarak linker -> input ayarına ilgili lib dosyasını eklersin.
 
-Sorular .
-	- Underground ve Fence modu ? 
 dll'ler:
 	- cublass*.dll , cudnn*.dll ,cufftw*.dll,curand*.dll,cusolver*.dll dosyaları algoritma ile ilgili. Ekran kartı üzerinde machine learning işlerinin yapılmasını sağlıyor.Model input verip model output üretilmesini sağlayan kütüphanelerin dll'leri.
 	- nvinfer*.dll, nvm.dll, nvonnxparser*.dll, nvparsers*.dll,nvrtc*.dll, onnx*.dll  dll dosyaları onnx uygulamasının çalışması için gereklidir.	
@@ -117,7 +115,7 @@ dpu_main.cpp:
 			- algoritma ekibi alarm kayıtlarının çıkardığı power'ları dump'lıyor, dosyaya yazıyor.
 	- global sabitler global_constant namespace'inde tutuluyor.
 	
-	- input_priority: Midas 3 için ilk olarak hangi fiber'den data geleceğini gösterir.
+	- input_priority: Midas 3 için ilk olarak hangi fiber'den data geleceğini gösterir. Genelde default olarak 0
 		
 	
 
@@ -269,12 +267,18 @@ DPUServer:
 
 ===================================================
 ders 7 : DPU'dan raw data nasıl geliyor kısmına odaklanıldı.:
+Dosyadan RawData Okuma:
+	file_data_source.cpp:
+		- ElementMainLoop() raw data'nın okunduğu kısım.
+		- GetFileSize(file_name) :  dosyanın kaç byte olduğunu döndürür.
+		-  window_size_in_bytes_ = number_of_samples_in_one_window_(400) * GetDPUConfig()->file_data_source_parameters_.file_data_source_number_of_channels(5150) * 2;
 interrogator_device_packet_structere.docx: 
 - DPU'nun raw data'yı düzgün bir şekilde parse etmesini sağlayacak adımlar.
 - Midas 2 cihazı 5150 kanal ve 1942 hz olarak çalıştığı senaryoda gönderdiği paket yapısı anlatılmaktadır.
 - cihaz fragment'ler halinde data yolluyor:
 	- her fragment içinde packet_header ve payload kısmı mevcuttur.  
 	- 8 adet fragment 1 frame'e karşılık gelir. ve 8 adet fragment tamamlandığı zaman 5150'lik bir kanaldan veri gelmiş oluyor.
+	- Midas 2'de 2 fragment var. fragment_count = 2
 	- 5150 kanalın (her kanal 2byte) her bir verisinin 8 adet küçük çank'lar halinde geldiğini düşünebiliriz. Biz bunları birleştiriyoruz.
 	- her çank'ta header ve payload var
 	- struct UDPPacketHeader //veri toplam 14 byte'lık (uint16_t short integer 2 byte , uint32_t : 4 byte): 
@@ -314,6 +318,7 @@ Pipeline:
 		- udp_data_source: sorgulayıcı cihazdan 4660 portundan gelen verinin alınmasını sağlıyor.
 		- file_data_source: sorgulayıcı varmış gibi dosyadan okuma yaparak işlem yapmamızı sağlar.
 	2) raw_data_mediator: 
+		- upd_data_source işini bitirdikten sonra data'yı buraya verir.
 		- Amacı raw data kaydı yapmak.  
 		- alınan raw data buraya gönderilir. 2GB'lik dosyalar halinde kayıt yapılır.
 		- raw data kaydı D:\MIDAS_RECORDS diskine yapılır.
@@ -327,16 +332,19 @@ Pipeline:
 	   rolling_raw_data_recorder:
 		- boost_singleProducer, boost_singleConsumer mesaj kuyruğu sınıfları kullanılıyor. raw_data_mediator bu kuyruğa yazıyor.
 	3) preprocessor: kaydedilen data preproccessor'a yollanıyor. Bu sayede algoritma alarmlar, waterfall.. üretiyor.
-	4) alarm_buffer: alarmlar önce alarm analizi'ne tabi tutuluyor ve renklendirme seviyesi belirleniyor.
-	5) tcp_data_sink: tcp üzerinden datayı gönderiyor.
-
+	4) alarm_buffer: alarmlar önce alarm analizi'ne tabi tutuluyor ve renklendirme seviyesi belirleniyor. Burdan sonra alarmlar tcp_data_sink'e gidiyorç
+	5) tcp_data_sink: tcp üzerinden datayı (alarm, waterfall ...) gönderiyor.
+!!! Biz datayı little endian formatında okuyoruz.
 udp_data_source:
+	- char* packet_buffer_; raw data burdan alınır.
 	- burdan raw data 400*5150 2byte olarak iletiliyor.
 	- Init fonksiyonunda port bilgisini okuyor.
 		- port bilgisini okuyor. 4660 port'undan sorgulayıcı cihaz raw data'yı basıyor.
-		- max_window_size_in_bytes_ : number_of_samples_in_one_window_ * MAX_NUMBER_OF_CHANNELS_IN_ONE_SAMPLE * 2
-		- number_of_samples_in_one_window_= 400
+		- max_window_size_in_bytes_ (65507 tutulmuş fakat o kadar büyük veri yok) : number_of_samples_in_one_window_ * MAX_NUMBER_OF_CHANNELS_IN_ONE_SAMPLE * 2
+		- number_of_samples_in_one_window_= 400  bir window'da kaç Frame tutulacağını gösterir.
 		- packet_buffer_ : cihaz'dan gelen raw data'nın tutulduğu yer. raw data'nın kendisini tutuyor.
+		- packet_header_size : 14 byte
+		-  !!! 10km için km artarsa değişmeli mi ?  :boost::asio::socket_base::receive_buffer_size option(10 * sample_frequency_ * MAX_NUMBER_OF_CHANNELS_IN_ONE_SAMPLE * 2); ???
 	- Byte'lar little endian'a göre okunuyor.
 	- run Process'i çalıştırır ve process sürekli çalışan bir fonksiyon:
 		- StartReceive: sorgulayıcı cihaz'dan verinin sürekli alındığı yer.
@@ -372,14 +380,22 @@ UDPDataSource -> RawDataMediator -> PreProcessor -> alarm_buffer -> TCPDataSink
 - GetNextElement(): pipeline'da bir sonraki elemanı temsil eder.
 - udp_data_source :
 	- 400 * 5150 'lik bufferlar ile data yollanıyor.
-	- ConcealLostSamples() : tam ne işe yaradığı bilinmiyor. Kullanılmadığında/yorum satırına alındığında uygulama garip bir tepki veriyor.
+	- ConcealLostSamples() : tam ne işe yaradığı bilinmiyor. Kullanılmadığında/yorum satırına alındığında uygulama garip bir tepki veriyor. Bu fonksiyon olmazsa waterfall yatayda çok sayıda çizgi atıyor.
 	- last_intact_sample_buffer_ : eski 5150*400'lük datanın kopyasını tutuyor hash tablosundaki kaymalar durumunda datayı kopyalıyor.
+	- HandleReceive:
+		- InitializeState(UDP_packet_header_): paket uzunluğu hesaplamaları yapılıp kontroller tamamlanınca reset_parameters_ 0 oluyor ve dosyaya yazma işlemine geçiyor.
+		-  WritePacketToWindowBuffer(packet_buffer_, window_buffer_, write_offset, bytes_transferred): offset ayarlandıktan sonra bellekte verinin yazıldığı yer burası.
+	- ParseUDPPacketHeader(): gelen paketler big endian ise ntoh fonksiyonları ile little endian'a dönüştürme işlemi yapıyor.
 - free_buffer_chunk_ (5150*400*2byte),free_buffer_queue_: 
 	- data_source, raw_data_mediator, preprocessor ortak bir messageQ kullanıyor. Bu messageQ preproccessor.cpp içerisinde yer alıyor.
-	- messageQ 20*400*5150*2byte'lık veri saklar.(20 window)
+	- windows = 400*5150*2byte => 400 * kanal sayısı* 2byte
+	- messageQ 20*400*5150*2byte'lık veri saklar.(20 window (400 frame))
+- window_buffer_:
+	- gösterdiği yer free_buffer_chunk_ ile aynı.
 - raw_data_mediator:
 	- D diskinde raw_data kaydı yapıyor.
 	- Bu Aracı bir sınıf asıl işi yapacak sınıflara raw_data yolluyor(rolling_raw_data_recorder,ondemand_raw_data_recorder). 
+	- ConfigureByPreviousElement(DPUConfig* dpu_config): bu sınıfı tetikleyen bir önceki sınıf tarafından çalıştırılıyor.
 	- şu kod arayüzde raw data çizdirebilmek için gerekli. Raw data kaydının yapıldığı yerler buaralar: 
 		if (GetDPUConfig()->iu_communicator_message_queues_->iu_communicator_message_queue_->write_available() >= (number_of_channels_in_one_sample_ * sizeof(int16_t))) 
 		{
@@ -388,6 +404,7 @@ UDPDataSource -> RawDataMediator -> PreProcessor -> alarm_buffer -> TCPDataSink
 		GetNextElement()->full_buffer_queue_->push((char*)&full_buffer_chunk_, sizeof(BufferChunk)); 
 		
 		- ONDEMAND_RAW_DATA_RECORDER, ROLLING_RAW_DATA_RECORDER sınıflarına veriler gönderiliyor.
+	
 - recorder:
 	- alarm bazlı kayıt, waterfall, ses verisi.. bunların hepsi recorder sınıfından türüyor.
 		- info_recorder sınıfında multi_inheritance var. Bunun nedeni bazı on_demand ve rolling_data sınıflarındaki info kayıtlarını oluşturmak için oluşturulan bir class. 
@@ -410,9 +427,15 @@ UDPDataSource -> RawDataMediator -> PreProcessor -> alarm_buffer -> TCPDataSink
 	WriteFile(data_record_file_,write_data_, writing_packet_byte_size_,&bytes_written,nullptr);
 	record_file_window_cnt_ = 0;
 }
+	- free_buffer_chunk_:
+	- full_buffer_chunk_:
+PipeLine hikaye:
+	- elementler (data_source,raw_data_mediator) ortak bir mesaj kuyruğu kullanılıyor. Sürekli iletişim halindeler.
+	- raw_data 3 element arasında iletiliyor. Sıra şu şekilde: data_source -> raw_data_mediator -> preproccessor
+	- data_source kuyrukta boş yer buldukça yazıyor=> raw_data_mediator ise bu veriyi okuyor ve okudukça kuyruğu boşaltıyor. İşi bitince raw data'yı tekrar kuyruğun boş alanına yazıyor=> preprocessor kuyruğun dolu olan yerini alıyor. Raw data'yı aldıktan sonra o yeri geri kuyruğa iade ediyor. 
 =============================================== 
 ders 9: rolling_raw_data kısmına odaklanıldı.:
-
+	- 2gb olacak şekilde kayıtlar alınıyor.
 ==========================================
 ders 10: ondemand_raw_data_recorder kısmına odaklanıldı.:
 * udp_data_source'dan gelen data raw_data_mediator'a geliyor. Mediator de aldığı raw data'ları rolling_raw_data'ya ve onDemand_raw_data'ya yolluyor.
@@ -423,7 +446,7 @@ ders 10: ondemand_raw_data_recorder kısmına odaklanıldı.:
 - windows_size_in_bytes: max_number_of_gui *400* 2 byte  bir iterasyonda kaydedilecek veri boyutu.
 
 ===============================================
-ders 11: ondemand_raw_data,file_datasource_enable kısmına odaklanıldı.:
+ders 11: ondemand_raw_data kısmına odaklanıldı.:
 * Midas 2 cihazı hep 5150 kanal olarak ayarlanıyor. sahada 3000 kanal olsa bile 5150 olarak ayarlanır. frekans değeri değişmemesi için.
 
 writeDataToFile:
@@ -452,7 +475,7 @@ dpu_default_communication.cfg :
 
 multi_input_zone_ofset: çok kullanılan birşey değil.
 ============================
-ders 12 (preproccessor):
+ders 12 (preproccessor configürasyon parametreleri):
 
 dpu_default_communication.cfg:
 	- "fibers" altında "channel_number" hiç değişmiyor. Nanotam altyüklenici firma değiştirilmesini önermiyor. Performans sıkıntıları oluşabiliyor.
@@ -529,8 +552,9 @@ SVGL17 Yazılım Tasarım Dokümanı_RevB_V2.docx  ??
 
 
 ============================
-ders 20 (dpu ile ilgili anlatım tamamlandı.,iu_communicator):
-C:/MIDAS/tools/nanotam_arayüz: burda Nanotam'ın kendi cihazları için ürettiği arayüzler yer alıyor.
+ders 20 (dpu ile ilgili anlatım tamamlandı.,iu_communicator(30.dk)):
+Genel:
+	- C:/MIDAS/tools/nanotam_arayüz: burda Nanotam'ın kendi cihazları için ürettiği arayüzler yer alıyor. Cihaza seri porttan komut yollayabiliyoruz.
 
 
 SVGL17 Yazılım Tasarım Tanımları Dokümanı_RevB_V2  ?? 
@@ -566,6 +590,9 @@ ders 26 (.js kodlar):
 
 ============================
 ders 27 (.js kodlar,arif yazılımı entegrasyonu,tcp_data_sink.cpp):
+Genel:
 	- run_time_files -> html->9980 .js kodlar
+tcp_data_sink:	
+	- tcp_data_sink port : "gui_interface_tcp_server_port": 19193, burdan msm'ye mesaj yollanıyor. MSM'ye akış bu port üzerinden oluyor.
 
 
