@@ -1,5 +1,11 @@
 DPU
 ===========
+dipnot'lar:
+	- DPU little endian veri kabul etmiyor.
+		- ParseudpPackageHeader çalışmıyor.
+	- DPU big endian veri alıyor.
+
+======
 ders 1 :
 
 DPU kaynak kod gitlab : http://192.168.21.86/
@@ -377,6 +383,7 @@ UDPDataSource -> RawDataMediator -> PreProcessor -> alarm_buffer -> TCPDataSink
 	- Kuyruğa raw_data'nın pointer'ları yazılıyor.
 	- İlk 3'ü ortak bir messageQ kullanılıyor. 
 	- Bu 3 mesajın ortak kullanıdığı messageQ preproccessor üzerinde yer alıyor: AllocateBuffers(). Kuyrukta 20*400*5150 2byte'lık veri saklanıyor.
+	- BufferChunk'da yer alan buffer_pointer raw_data'yı tutuyor.
 - GetNextElement(): pipeline'da bir sonraki elemanı temsil eder.
 - udp_data_source :
 	- 400 * 5150 'lik bufferlar ile data yollanıyor.
@@ -384,7 +391,12 @@ UDPDataSource -> RawDataMediator -> PreProcessor -> alarm_buffer -> TCPDataSink
 	- last_intact_sample_buffer_ : eski 5150*400'lük datanın kopyasını tutuyor hash tablosundaki kaymalar durumunda datayı kopyalıyor.
 	- HandleReceive:
 		- InitializeState(UDP_packet_header_): paket uzunluğu hesaplamaları yapılıp kontroller tamamlanınca reset_parameters_ 0 oluyor ve dosyaya yazma işlemine geçiyor.
-		-  WritePacketToWindowBuffer(packet_buffer_, window_buffer_, write_offset, bytes_transferred): offset ayarlandıktan sonra bellekte verinin yazıldığı yer burası.
+		-  WritePacketToWindowBuffer(packet_buffer_, window_buffer_, write_offset, bytes_transferred): offset ayarlandıktan sonra bellekte verinin yazıldığı yer burası. window_buffer_'a Sadece ham data yazılır. header ayıklanır.
+		- packet_buffer_:	UDP paketi ile gelen verinin tutulduğu buffer (kaynak bellek).
+		- window_buffer_:	Paketin yazılacağı bellek alanı (hedef buffer).
+		- write_offset:	Paketin hedef buffer içinde nereye yazılacağını belirten offset (bellek konumu).
+		- bytes_transferred:	Gelen paketteki veri boyutu (kaç byte yazılacağı).
+
 	- ParseUDPPacketHeader(): gelen paketler big endian ise ntoh fonksiyonları ile little endian'a dönüştürme işlemi yapıyor.
 - free_buffer_chunk_ (5150*400*2byte),free_buffer_queue_: 
 	- data_source, raw_data_mediator, preprocessor ortak bir messageQ kullanıyor. Bu messageQ preproccessor.cpp içerisinde yer alıyor.
@@ -392,6 +404,7 @@ UDPDataSource -> RawDataMediator -> PreProcessor -> alarm_buffer -> TCPDataSink
 	- messageQ 20*400*5150*2byte'lık veri saklar.(20 window (400 frame))
 - window_buffer_:
 	- gösterdiği yer free_buffer_chunk_ ile aynı.
+	- sadece header'ı ayıklanmış ham data tutar
 - raw_data_mediator:
 	- D diskinde raw_data kaydı yapıyor.
 	- Bu Aracı bir sınıf asıl işi yapacak sınıflara raw_data yolluyor(rolling_raw_data_recorder,ondemand_raw_data_recorder). 
@@ -435,7 +448,18 @@ PipeLine hikaye:
 	- data_source kuyrukta boş yer buldukça yazıyor=> raw_data_mediator ise bu veriyi okuyor ve okudukça kuyruğu boşaltıyor. İşi bitince raw data'yı tekrar kuyruğun boş alanına yazıyor=> preprocessor kuyruğun dolu olan yerini alıyor. Raw data'yı aldıktan sonra o yeri geri kuyruğa iade ediyor. 
 =============================================== 
 ders 9: rolling_raw_data kısmına odaklanıldı.:
+Genel:
 	- 2gb olacak şekilde kayıtlar alınıyor.
+	- data_recorder:
+		- RollingRawDataRecorder:
+			- verileri boost kütüphanesinde yer alan mesaj kuyruğuna yazıyor.
+			- recorder_comperession ratio: eskiden kaydın hepsini değil de bir kısmını kaydet yeteneği varmış. Artık yok.
+			- number_of_channels_offset: 
+				- midas3'de separete modda offset ayarı var. Belli kanallar boş sinyal oluyor o boş sinyalin bittiği yerden itibaren anlamlı olan sinyali algoritma koduna vermek ve işletmek istiyorum. Anlamsız olan sinyali görmek ve algoritma koduna vermek istemiyoruz.
+				- Uc uca eklendiğinde başta boş sinyaller olabiliyor.
+	- info recorder:
+		- kaydedilen raw_data'nın info'larının yazılmasını sağlayan sınıf.
+		
 ==========================================
 ders 10: ondemand_raw_data_recorder kısmına odaklanıldı.:
 * udp_data_source'dan gelen data raw_data_mediator'a geliyor. Mediator de aldığı raw data'ları rolling_raw_data'ya ve onDemand_raw_data'ya yolluyor.
