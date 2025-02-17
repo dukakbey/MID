@@ -76,4 +76,4 @@
         cudart.lib
         cublas.lib
 
-- son olarak release mod'da çalış.
+- son olarak release mod'da çalış ve tüm dll'leri x64 release altına kopyala.

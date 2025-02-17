@@ -15,5 +15,13 @@ Ders1:
 		
 	- Touch arayüzünden aktivite üzerinde show signal dediğimizde ARS aracılığı ile TFTP'de dosya hazırlandı.ARS bu logu bastı.
 ========================		
-Ders2:
+Ders2:+
 	- simülatör anlatılıyor 
+	
+===================
+Ders6 :
+	- Alarm tipi anlatımı dk 33
+	
+========================
+Ders9:
+	- waterfall akışı için comapi subscribeWaterfall()

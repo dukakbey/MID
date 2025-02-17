@@ -487,13 +487,18 @@ WriteRecordDescriptionFile():
 
 pipeline devam- data source: 
 	-*** run_time_files=>config=>default=>dpu_default_development.cfg içinde file_datasource_enable'ı 1 yaparsak artık file'dan okur.
-
+preproccessor:
+	- Buraya data raw_data_mediator'dan gelir. 400*5150'lik veri.
+	- ham veri waterfall, ses, spektram , alarm'a dönüştürülüyor. Preprocessor içinde tetikleniyor. Underground ve fence'e göre özelleşiyor. 
+	- number_of_channels_offset: seperate modda anlamsız ,düz sinyali bittiği yer bilgisi offset'liyor.
+raw_data'yı +proccessor'a offsetleyerek veriyor.
+		- offset = max_number_of_channels - max_number_of_gui
 processor: 
+	- içinde underground ve fence çalışacak 2 ayrı sınıf yaratılır.
 	- udp_data_source -> raw_data_mediator -> preproccessor şeklinde akış ile buraya raw data geliyor.  processor'un amacı bu verilerin işlenmesi.
 	- ham veri waterfall, ses, spektram , alarm'a dönüştürülüyor. Preprocessor içinde tetikleniyor.
-	- number_of_channels_offset: seperate modda anlamsız ,düz sinyali bittiği yer bilgisi offset'liyor.
-offset = max_number_of_channels - max_number_of_gui
-
+	
+	
 dpu_default_communication.cfg :
 	- "fibers" altında "channel_number" hiç değişmiyor. Değişirse frekans değişir. dpu_default_performance_settings.cfg ile oynanır. "PerformanceSettingsParameters" altında midas*_usage değiştirilir.
 
@@ -514,7 +519,7 @@ mod'lar:
 
 preprocessor.cpp:
 	- Data önce raw_data_mediator'a gelir sonrasında preprocessor'a gelir. Process initialize edilerek sürekli raw_data_mediator üzerinden sürekli raw data gelecek şekilde başlatılıyor.
-	- number_of_openmp_threads_: sayısı 4. Artırılırsa yazılımın daha hızlı bir şekilde çalışması sağlanır ama cpu kullanımı artar. 
+	- number_of_openmp_threads_: sayısı default olarak 4'tür. İş yükü thread'lere bölünür. Artırılırsa yazılımın daha hızlı bir şekilde çalışması sağlanır ama cpu kullanımı artar. 
 	- 
 
 int16_t :short integer
@@ -532,12 +537,22 @@ weak_signal_detector:
 
 preproccessor'e raw datanın geldiği değişken :
 	- int16_t* in_buf = (int16_t*)full_buffer_chunk_.buffer_pointer;
-	- 
- 
+	- asıl algoritmaların çalıştığı ve aktivitelerin tespit edildiği yer => processors_[i]->RunAlgorithm
+		- buraya raw_data geliyor. Power, probabilities çıkarılıyor.
+		- çıkarılan probabilities'ler tracker'a geliyor ve tracker'lar alarm tespiti yapıyor.
+		- burdaki for zone sayısı kadar. Her zone için ayrı processor çalışıyor.
+		- out_power waterfall'da gördüğün değer.
+		- deprem tespiti out_power'ı kullanır.
+	- activity_tracker_->RunAlgorithm : alarm burdan üretiliyor. 
+	- DetectionListEntry:  ?
+	- audio_spectrogram_generator : alarm bazlı ses verisi kaydeder.
 absolute_channels ?:
+	- hangi kanal hangi zone'a karşılık geldiğini tutar.
 	- 0-2000 veya 0-5150 arası bir değerdir.
 	
 activity_count:
+	- ?? 
+alarm bazlı kayıt:
 	- ?? 
 ===========================
 ders 14 (preproccessor):
@@ -615,8 +630,11 @@ ders 26 (.js kodlar):
 ============================
 ders 27 (.js kodlar,arif yazılımı entegrasyonu,tcp_data_sink.cpp):
 Genel:
+	
 	- run_time_files -> html->9980 .js kodlar
 tcp_data_sink:	
 	- tcp_data_sink port : "gui_interface_tcp_server_port": 19193, burdan msm'ye mesaj yollanıyor. MSM'ye akış bu port üzerinden oluyor.
+	
 
-
+tcp_data_sink:
+	- tcp üzerinden waterfall datasını MSM'ye gönderir.
