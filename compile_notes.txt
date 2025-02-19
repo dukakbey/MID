@@ -75,5 +75,7 @@
         onnxruntime_providers_tensorrt.lib
         cudart.lib
         cublas.lib
+		opencv_world460.lib
+
 
 - son olarak release mod'da çalış ve tüm dll'leri x64 release altına kopyala.

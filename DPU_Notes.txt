@@ -504,7 +504,7 @@ dpu_default_communication.cfg :
 
 multi_input_zone_ofset: çok kullanılan birşey değil.
 ============================
-ders 12 (preproccessor configürasyon parametreleri):
+ders 12: (preproccessor configürasyon parametreleri):
 
 dpu_default_communication.cfg:
 	- "fibers" altında "channel_number" hiç değişmiyor. Nanotam altyüklenici firma değiştirilmesini önermiyor. Performans sıkıntıları oluşabiliyor.
@@ -555,7 +555,7 @@ activity_count:
 alarm bazlı kayıt:
 	- ?? 
 ===========================
-ders 14 (preproccessor):
+ders 14 (rolling_waterfall_recorder):
 alarm bazlı kayıt:
 	- ALARM_TRIGGERED_RAW_DATA_RECORDER
 	- ALARM_TRIGGERED_AUDIO_RECORDER
@@ -563,22 +563,74 @@ alarm bazlı kayıt:
 
 rolling_waterfall_recorder.cpp:
 	- WriteDataToFile: max_number_of_gui kadar veriyi (5150 kanal) direk yazıyor. Windows mantığı olmadığı için daha kolay bir yazma işlemi.
+disk_manager.cpp:
+	- 10gb'dan daha az yer kalırsa eski dosyaları silmeye başlar.
 
+alarm_triggered_recorder_max_duration_in_seconds:
+	- Network'e yük bindirmemek adına 15 dk'yı aşan alarmlarda sadece 15 dk'lık kısmını kaydetmek için.
+
+Alarm_Triggered_Records:
+	- alarm kaydı isimlendirmesinde _'den sonraki kısım alarm id'si 2025-02-12--21-43-48_2071557509.temp
+	- alarm oluşturulmaya devam ederken '.temp' uzantılı alarm tamamlandığında ise '.wf'  uzantılı olarak kaydedilir.
 tcp_messages.h:
 	- WaterfallMessageHeader
 ===============================
-ders 15 (preproccessor):
-	- 
-
-============================
+ders 15 (alarm_buffer,audio_spectrogram_generator):
+	- StreamAudioSpectrogram:
+		- canlı ses verisini touch üzerinden dinlemeyi sağlar.
+	- alarm_buffer:
+		- Gelen alarmı bir sonraki akışa yani tcp_data_sink'e yolluyor.
+	- CreateAudioSpectrogramForRecording:
+		- Alarmların seslerinin kaydedilmesini sağlıyor.
+		- active_detection_list_to_use: preprocessor üretiyor.
+	- audio_spectrogram_generator:
+		- detection->audio_upsampler_: ses verisini bu değerin içinde tutuyor. 
+		- sendInternalAlarmStateMessage
+		- burda row data kaydı da yapılıyor.
+	- Alarm_Triggered_AudioRecorder:
+		- anlık ses verileri geliyor ve kaydediliyor.
+	- Alarm_Triggered_Recorder
+		- alarm_start_message->track_lock_status: 0 ilk defa geliyosa 0 yoksa 1. 
+		
+		
+===============================
+ders 16 (alarm_analyzer, processor):
+	- OpenRecordFile:
+		- Alarm Id'ye göre ses dinleme.
+	- WriteDataToFile:
+		- Ses verisinin kaydedildiği yer.
+		- Alarm 900 sn'den büyük ise dosya kapatılıp yeni dosya açılıyor.
+		- first_audio_data_: ilk defa ses verisi kaydedilecekse info bilgisinin eklenmesi için.
+		
+	- audio_spectrogram_generator:
+		- GenerateRawData ? 
+	- enable_alarm_triggered_recorder: 0 olursa hiçbir alarm tetikli kaydı yapmaz.
+	- yazılımın sahip olacağı zone'lar : underground, fence, powerline   
+	- feature_extractor ? 
+	
+	- Processor:
+		- n_downsample_out_: 5khz çalışan zone'dan bilgi geldi ama geldiği zone 2khz ile çalışıyor uyarlamak için downsample yapılır.
+		- PowerNormalization ekrandaki renklendirme. Normalize ederek kırmızı ve maviliklerin oluşmasını sağlıyor.
+		- FeatureExtractor: 
+			- model'in input'unu oluşturmak için kullanılıyor. 
+			- Küçük window'lar halinde modele input veriliyor.
+			- 3 boyutlu 400*5150 geliyor 5150*48*32'lik window'lar ile modele veriliyor.
+			- Data'yı modele uygun formata çeviriyor.
+		- ProbabilityAccumulator:
+			- aktivitelerin analizi ve tespiti için olasılık çıkarıyor.
+		- OnnxRuntimeSession:
+			- Onnx microsft'un geliştirdiği yazılımı deeplearning kütüphanelerinden bağımsız hale getiren bir framework'dür.
+			- çok hızlı bir şekilde 
+	
+===============================
 ders 17 (alarm_analyzer):
 	- 
 
 
-============================
+===============================
 ders 18 (alarm_analyzer):
-
-============================
+	- 
+===============================
 ders 19 (alarm_analyzer, iu_communicator-MIDAS3_Komut_Mesaj_Parametre_2021 dokümanındaki komutlar anlatıldı):
 MIDAS3_Komut_Mesaj_Parametre_2021.10.01.xlsx dokümanı ? 
 SVGL17 Yazılım Tasarım Dokümanı_RevB_V2.docx  ??
@@ -612,7 +664,7 @@ ders 22 (iu_communicator):
 
 
 ============================
-ders 23 (iu_communicator,dpu_server.cpp):
+ders 23 (iu _communicator,dpu_server.cpp):
 	- 
 
 
