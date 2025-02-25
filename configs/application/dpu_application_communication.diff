@@ -1,0 +1,22 @@
+{
+  "InterrogatorFiberParameters": {
+    "interrogator_usage_type": 2,
+    "interrogator_device_type": 4,
+    "midas2d": {
+      "frequency": 1942,
+      "input_priority": 0,
+      "multi_input_zone_offset": 0,
+      "fiber_number": 3,
+      "fibers": [
+        {
+          "channel_number": 2500,
+          "adc_sample_number": 25
+        },
+        {
+          "channel_number": 2500,
+          "adc_sample_number": 25
+        }
+      ]
+    }
+  }
+}

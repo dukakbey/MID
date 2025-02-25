@@ -1,0 +1,32 @@
+ÖZET
+============
+Bu dosya (udp_data_source.cpp), UDP üzerinden veri alımı yapan bir bileşeni tanımlayan bir C++ uygulamasıdır. Boost.Asio kütüphanesini kullanarak UDP soketi üzerinden veri almayı, bu verileri işleyip bellekte tutmayı ve diğer bileşenlere iletmeyi sağlar.
+
+Öne Çıkan Bileşenler:
+Sınıf Yapısı:
+
+UDPDataSource, DPUElement sınıfından türetilmiştir.
+Yapıcı metod (UDPDataSource::UDPDataSource) bazı dahili değişkenleri sıfırlar.
+Yıkıcı metod (UDPDataSource::~UDPDataSource), UDP soketini kapatarak bellek temizliği yapar.
+Ana İşlevler:
+
+Run(): UDP dinleme işlemini başlatan bir thread açar.
+Stop(): Thread’i durdurur ve io_service_ nesnesini kapatır.
+Process(): UDP portunu dinlemeye başlar, gelen paketleri işleyerek diğer bileşenlere aktarır.
+Init(DPUConfig* dpu_config): Başlangıç konfigürasyonlarını yapar ve gerekli bellek tahsislerini gerçekleştirir.
+UDP Alım Süreci:
+
+StartReceive(): UDP verilerini asenkron olarak dinlemeye başlar.
+HandleReceive(): Gelen verileri işler ve eksik paketleri tamamlamaya çalışır.
+ParseUDPPacketHeader(): UDP başlığını işler ve endian dönüşümlerini yapar.
+WritePacketToWindowBuffer(): Alınan verileri bellekte ilgili bölgeye kopyalar.
+Eksik Paketleri Düzeltme:
+
+ConcealLostSamples(): Eksik örnekleri önceki örneklerle tamamlayarak veri bütünlüğünü sağlar.
+Diğer Yardımcı İşlevler:
+
+CompareToReferenceFile(): Gelen verileri referans bir dosya ile karşılaştırır.
+ReverseInt16Arr(): Gelen verilerde kanal sıralamasını ters çevirir.
+Bu kod büyük ihtimalle gerçek zamanlı veri akışı işleyen bir sistemde kullanılıyor. Özellikle büyük veri paketlerini alıp işleyen sistemlerde, sensör ağlarında veya telemetri uygulamalarında bu tür bir UDP veri kaynağı (data source) sıkça kullanılır.
+
+================================================================================================

@@ -1,0 +1,67 @@
+{
+  "ClassificationParameters" : {
+     "modes" : [
+        {
+           "label" : "underground",
+           "selection_flag" : "0"
+        },
+        {
+           "label" : "fence",
+           "selection_flag" : "0"
+        },
+	{
+          "label": "powerline",
+          "selection_flag": "1"
+        }
+     ],
+     "mode_parameters" : [
+        {
+           "underground" : {
+              "activity_types" : [
+                 {
+                    "label" : "human",
+                    "id" : 0,
+                    "report_activity_flag" : 1
+                 },
+                 {
+                    "label" : "digging",
+                    "id" : 2,
+                    "min_time_lag_btw_activity" : 3,
+                    "class_decision_min_act_num_required" : [
+                       12,
+                       12,
+                       4,
+                       12,
+                       12
+                    ],
+                    "declaration_probability" : [
+                       0.92,
+                       0.92,
+                       0.8,
+                       0.92,
+                       0.92
+                    ],
+                    "report_activity_flag" : 2
+                 },
+                 {
+                    "label" : "rockfall",
+                    "id" : 7,
+                    "report_activity_flag" : 0
+                 }
+              ]
+           }
+        }
+     ]
+  },
+  "JPDATrackerParameters" : {
+     "digging" : {
+        "enable" : 1,
+        "max_consecutive_missed_obs_for_declared_tracks_in_secs" : 6,
+        "min_consecutive_missed_obs_for_declared_tracks_in_secs" : 2,
+        "max_gap_path_length_ratio" : 0.01
+     },
+     "human" : {
+        "enable" : 1
+     }
+  }
+  }

@@ -1,0 +1,10 @@
+{
+  "PerformanceSettingsParameters": {
+    "max_number_of_channels_to_display_on_gui": {
+      "midas2d_usage": [ 2500, 2500 ]
+    },
+    "fiber_length_in_number_of_channels": {
+      "midas2d_usage": [ 2500, 2500 ]
+    }
+  }
+}

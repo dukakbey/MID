@@ -185,6 +185,7 @@ dpu_config:
 			- alarm 'ın derecelendirmesine göre renklendirme yapıyor.
 			- alarm kanalının 14 günlük activity count'larını tutar.
 		- StatisticRecorderParameters
+			- StatisticRecordEnable: alarm analyses 'ı kapatabilirsin
 ==========================================
 ders 5 (dpu_config, config_factory, model_info.json):
 dpu_config:	

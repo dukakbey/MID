@@ -1,5 +1,6 @@
 - öncelikle cpp 14 ile derlenmeli.
-
+- bilgisayarda cuda kurulu olamlı.
+- D diski altına Apps klasörü ve içeriği kopyalanmalı.(boost, opencv gibi kütüphaneleri içeriyor)
 - Configuration Properties > C/C++ > General >Additional Include Directories ( .h Kütüphaneleri dahil et.):
         D:\Apps\Midas_Libs\opencv\build\include
         D:\Apps\Midas_Libs\VC_Libs\openssl\include

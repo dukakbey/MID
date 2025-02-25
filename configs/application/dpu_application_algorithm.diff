@@ -1,0 +1,34 @@
+{
+  "ClassificationParameters": {
+    "modes": [
+        {
+          "label": "underground",
+          "selection_flag": "0"
+        },
+        {
+          "label": "fence",
+          "selection_flag": "0"
+        },
+	{
+          "label": "powerline",
+          "selection_flag": "1"
+        }
+    ],
+    "mode_parameters": [
+        {
+          "underground": {
+            "model_folder_path": ".\\run_time_files\\classification\\midas3\\underground\\model21.9.5\\"
+          }
+        }
+      ],
+    "WeakSignalParameters": {
+      "weak_signal_enable": 0,
+      "weak_signal_switch_index": 10300,
+      "signal_multiplier": 9,
+      "weak_signal_threshold": 30,
+      "change_detection_threshold": 10,
+      "check_signal_at_start_param": 100,
+      "min_number_of_samples_for_weak_signal": 10
+    }
+  }
+}
